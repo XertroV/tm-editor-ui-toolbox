@@ -155,15 +155,18 @@ void RecurseSetLabelVisibility(CControlBase@ el) {
 }
 
 void CheckAutoHideInventory(CGameCtnEditorFree@ editor) {
-    if (!S_AutoHideInventory || editor is null) return;
+    // note: don't exit early if the setting is disabled b/c we don't want to keep IsHiddenExternal true if the setting is disabled
+    if (editor is null) return;
+    /* thought this worked, mb sometimes, but didn't work when trying it this time
     // editor.PluginMapType.HideInventory = !g_MouseHoveringInventory;
+    */
     auto frameMain = cast<CControlContainer>(editor.EditorInterface.InterfaceRoot.Childs[0]);
     if (frameMain is null) return;
     auto frameInventories = cast<CControlContainer>(frameMain.Childs[0]);
     if (frameInventories is null) return;
     if (g_MouseHoveringInventory) {
         frameInventories.IsVisible = true;
-    } else {
+    } else if (S_AutoHideInventory) {
         frameInventories.IsHiddenExternal = true;
     }
 }
@@ -341,7 +344,8 @@ bool g_MouseHoveringInventory = false;
 bool g_HoveringOverEditor = false;
 vec2 g_LastMousePos;
 uint g_LastEditorHoverTime = 0;
-const uint EditorHoverTimeout = 200;
+[Setting hidden]
+uint S_EditorHoverTimeout = 200;
 
 /** Called whenever the mouse moves. `x` and `y` are the viewport coordinates.
 */
@@ -353,7 +357,7 @@ void OnMouseMove(int x, int y) {
     g_LastMousePos = pos;
     bool activelyHovering = IsWithin(pos, hoverAreaPos, hoverAreaSize)
         || (g_HoveringOverEditor && IsWithin(pos, uiPosPx, uiSizePx));
-    g_HoveringOverEditor = S_AlwaysShowEditor || activelyHovering || (Time::Now - g_LastEditorHoverTime < EditorHoverTimeout);
+    g_HoveringOverEditor = S_AlwaysShowEditor || activelyHovering || (Time::Now - g_LastEditorHoverTime < S_EditorHoverTimeout);
     if (activelyHovering) g_LastEditorHoverTime = Time::Now;
     g_MouseHoveringInventory = g_HoveringOverEditor && (
         IsInventoryFrameFocused(pos)

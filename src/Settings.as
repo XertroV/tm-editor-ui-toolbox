@@ -41,7 +41,10 @@ void S_RenderUIScaleTab() {
     bool orig_ShowBlockLabels = S_ShowBlockLabels;
 
     Heading("Editor UI Options");
-    S_AlwaysShowEditor = UI::Checkbox("Always Show Editor UI? \\$f84Unsafe!\\$z" + TTIndicator, S_AlwaysShowEditor);
+    S_EditorHoverTimeout = uint(UI::SliderFloat("Editor UI Hide Timeout (s)" + TTIndicator, S_EditorHoverTimeout / 1000., 0, 3.) * 1000.);
+    AddSimpleTooltip("How long the mouse needs to spend outside the editor UI region for the UI to automatically hide.");
+
+    S_AlwaysShowEditor = UI::Checkbox("Always Show Editor UI? \\$f84Unsafe for mapping!\\$z" + TTIndicator, S_AlwaysShowEditor);
     AddSimpleTooltip("You will experience phantom UI clicks if you leave this on.\nIt's useful while adjusting the editor UI region, though.");
 
     S_HideMapInfo = UI::Checkbox("Hide Map Info?" + TTIndicator, S_HideMapInfo);
@@ -53,7 +56,7 @@ void S_RenderUIScaleTab() {
     S_AutoHideInventory = UI::Checkbox("Auto-hide the Inventory? (Auto TAB)" + TTIndicator, S_AutoHideInventory);
     AddSimpleTooltip("This will auto-hide the inventory (blocks / items / macroblocks / etc) when the mouse\nis not hovering over it, and re-show it when the mouse enters that region again.\nUseful in fullscreen mode. Also helps with phantom misclicks.");
     if (S_AutoHideInventory) {
-        S_InventoryFocusTimeoutSeconds = UI::SliderFloat("Auto-hide Timeout (s)", S_InventoryFocusTimeoutSeconds, 0., 3.);
+        S_InventoryFocusTimeoutSeconds = UI::SliderFloat("Inventory Auto-hide Timeout (s)", S_InventoryFocusTimeoutSeconds, 0., 3.);
     }
     // if (UI::BeginChild("timeout child")) {
     //     UI::BeginDisabled(!S_AutoHideInventory);
