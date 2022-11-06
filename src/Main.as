@@ -22,6 +22,7 @@ void WatchEditor() {
         CheckEditorLabels(editor);
         CheckEditorLightmap(editor);
         CheckHideMapInfo();
+        CheckAutoHideInventory(editor);
     }
 }
 
@@ -144,6 +145,41 @@ void RecurseSetLabelVisibility(CControlBase@ el) {
     }
 }
 
+void CheckAutoHideInventory(CGameCtnEditorFree@ editor) {
+    if (!S_AutoHideInventory || editor is null) return;
+    // editor.PluginMapType.HideInventory = !g_MouseHoveringInventory;
+    auto frameMain = cast<CControlContainer>(editor.EditorInterface.InterfaceRoot.Childs[0]);
+    if (frameMain is null) return;
+    auto frameInventories = cast<CControlContainer>(frameMain.Childs[0]);
+    if (frameInventories is null) return;
+    if (g_MouseHoveringInventory) {
+        frameInventories.IsVisible = true;
+    } else {
+        frameInventories.IsHiddenExternal = true;
+    }
+}
+
+[Setting hidden]
+uint inventoryFocusTimeoutSeconds = 0.25;
+
+uint lastTimeFocused = 0;
+bool IsInventoryFrameFocused() {
+    bool defaultResp = Time::Now - lastTimeFocused < uint(inventoryFocusTimeoutSeconds * 1000);
+    try {
+        auto frameMain = cast<CControlContainer>(cast<CGameCtnEditorFree>(GetApp().Editor).EditorInterface.InterfaceRoot.Childs[0]);
+        if (frameMain is null) return defaultResp;
+        auto frameInv = cast<CControlContainer>(frameMain.Childs[0]);
+        if (frameInv is null) return defaultResp;
+        bool isFocused = frameInv.IsFocused;
+        if (isFocused) lastTimeFocused = Time::Now;
+        return isFocused || defaultResp;
+    } catch {
+        return defaultResp;
+    }
+}
+
+/* MAIN EDITOR UI CONFIG STUFF */
+
 mat3 uiScaleUVs;
 mat3 uiTranslateUVs;
 mat3 uiToUVs;
@@ -155,6 +191,8 @@ bool matriciesInitialized = false;
 vec2 screenWH;
 vec2 hoverAreaSize;
 vec2 hoverAreaPos;
+vec2 inventoryAreaSize;  // for autohide
+vec2 inventoryAreaPos;  // for autohide
 
 [Setting hidden]
 float S_HoverFontSize = 50;
@@ -195,7 +233,11 @@ void ConfigEditorUI() {
     uiSizePx = ScaleUvToPixels(uiWH);
 
     hoverAreaSize = ScaleUvToPixels((uiScaleUVs * vec3(uiWH.x, uiWH.y, 1)).xy);
+    // In effect, apply this twice to make a similar scaled down version
     hoverAreaPos = UICoordsToScreen((uiToUVs * vec3(0, 0, 1)).xy - uiWH / 2.);
+
+    inventoryAreaSize = ScaleUvToPixels((uiScaleUVs * vec3(2, .4, 1)).xy);
+    inventoryAreaPos = UICoordsToScreen(vec2(-1, .6));
 
     if (S_HoverIsSimilarlyScaled)
         S_HoverFontSize = Math::Min(screenWH.x, screenWH.y) / 30.;
@@ -246,13 +288,15 @@ void UpdateEditorPosFromDrag() {
 }
 
 
+bool g_MouseHoveringInventory = false;
 bool g_HoveringOverEditor = false;
 vec2 g_LastMousePos;
 
 /** Called whenever the mouse moves. `x` and `y` are the viewport coordinates.
 */
 void OnMouseMove(int x, int y) {
-    if (GetApp().Editor is null) return;
+    auto editor = cast<CGameCtnEditorFree>(GetApp().Editor);
+    if (editor is null) return;
     if (!matriciesInitialized) return;
     vec2 pos = vec2(x, y);
     g_LastMousePos = pos;
@@ -261,6 +305,9 @@ void OnMouseMove(int x, int y) {
         // ? mouseUV.x > S_EditorDrawBounds.x && mouseUV.x < S_EditorDrawBounds.z
         // && mouseUV.y > S_EditorDrawBounds.y && mouseUV.y < S_EditorDrawBounds.w
         : IsWithin(pos, hoverAreaPos, hoverAreaSize)
+    );
+    g_MouseHoveringInventory = g_HoveringOverEditor && (
+        IsWithin(pos, inventoryAreaPos, inventoryAreaSize) || IsInventoryFrameFocused()
     );
     for (uint i = 0; i < buttons.Length; i++) {
         buttons[i].UpdateMouse(pos);
@@ -349,6 +396,10 @@ bool IsWithin(vec2 pos, vec2 topLeft, vec2 size) {
 /** Render function called every frame.
 */
 void Render() {
+    if (S_ShowDebugRegions) {
+        DrawDebugAutoHideInventory();
+    }
+
     if (!matriciesInitialized) return;
     if (GetApp().Editor !is null) {
         if (GetApp().CurrentPlayground !is null) return; // when in test mode

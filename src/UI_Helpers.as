@@ -5,6 +5,7 @@ void Heading(const string &in str) {
     UI::PopFont();
     // VPad();
     UI::Separator();
+    VPad(.25);
     // VPad();
 }
 

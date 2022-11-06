@@ -20,6 +20,12 @@ bool S_ShowBlockLabels = false;
 [Setting hidden]
 bool S_AlwaysShowEditor = false;
 
+[Setting hidden]
+bool S_AutoHideInventory = false;
+
+[Setting hidden]
+bool S_ShowDebugRegions = false;
+
 const string TTIndicator = "  \\$888" + Icons::QuestionCircle + "\\$z";
 
 
@@ -29,7 +35,7 @@ void S_RenderIntroTab() {
 }
 
 
-[SettingsTab name="Editor UI 'Scaling'" icon="Expand"]
+[SettingsTab name="Editor UI" icon="Expand"]
 void S_RenderUIScaleTab() {
     vec4 orig_EditorDrawBounds = vec4(S_EditorDrawBounds);
     bool orig_ShowBlockLabels = S_ShowBlockLabels;
@@ -40,8 +46,15 @@ void S_RenderUIScaleTab() {
 
     S_HideMapInfo = UI::Checkbox("Hide Map Info?" + TTIndicator, S_HideMapInfo);
     AddSimpleTooltip("Hides the green box in the top left that shows map name,\nauthor, coppers cost, and validation status.\n(Sets FrameChallengeParams.IsVisible = false)");
+
     S_ShowBlockLabels = UI::Checkbox("Show All Block Labels in Inventory?" + TTIndicator, S_ShowBlockLabels);
     AddSimpleTooltip("This will enable labels for the folders / blocks in the inventory.\nThese aren't usually visible.\nTo disable, you might need to restart the editor/game.");
+
+    S_AutoHideInventory = UI::Checkbox("Auto-hide the Inventory? (Auto TAB)" + TTIndicator, S_AutoHideInventory);
+    AddSimpleTooltip("This will auto-hide the inventory (blocks / items / macroblocks / etc) when the mouse\nis not hovering over it, and re-show it when the mouse enters that region again.\nUseful in fullscreen mode.");
+
+    S_ShowDebugRegions = UI::Checkbox("Draw Debug Regions?" + TTIndicator, S_ShowDebugRegions);
+    AddSimpleTooltip("This will draw the regions where hover things activate if they are invisible.\n(E.g., the auto-unhide inventory activation region)");
 
     Heading("Editor UI Quick Settings");
     QuickSetting_Bounds(EditorBounds_FS_Q, "Fullscreen (Standard Editor)");
@@ -53,10 +66,9 @@ void S_RenderUIScaleTab() {
 
     Heading("Editor UI Size/Location");
 
-    VPad(.25);
     UI::TextWrapped("You can set a custom editor UI scale and placement using these sliders.");
     UI::TextWrapped("Note: they are not very intiutive. Use the quick settings buttons above to get a feel. Ctrl + click the sliders to set an exact value.");
-    UI::TextWrapped("You might find it easier to drag the " + Icons::Arrows + " button to dynamically resize the editor.");
+    UI::TextWrapped("You might find it easier to drag the " + Icons::Arrows + " and " + Icons::Expand + " buttons to dynamically move and resize the editor, respectively.");
     VPad(.25);
     if (UI::BeginTable("pos/size", 2, UI::TableFlags::SizingFixedFit)) {
         UI::TableNextColumn();
@@ -238,9 +250,12 @@ bool S_LM_DisableShadows = false;
 [Setting hidden name="Force Next Item/Block Lowest Lightmap Quality?"]
 bool S_LM_ForceLowQuality = false;
 
-[SettingsTab name="Lighting / Lightmap" icon="LightbulbO"]
+[SettingsTab name="Lightmap" icon="LightbulbO"]
 void S_RenderLightMapTab() {
     Heading("Editor UI Options");
+    VPad(.25);
+    UI::TextWrapped("\\$f84Note: Experimental!\\$z Shouldn't crash your game, but might not actually work...");
+    VPad(.5);
 
     S_LM_DisableShadows = UI::Checkbox("Disable Shadows? " + TTIndicator, S_LM_DisableShadows);
     AddSimpleTooltip("May improve performance wrt block placement and lightmap calculations.");
