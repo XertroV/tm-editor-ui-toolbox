@@ -1,13 +1,9 @@
-# Alt Player State
+# Rescale Editor UI
 
-Drop-in replacement for PlayerState. Requires MLHook.
+todo:
 
-Usage:
-
-```AngelScript
-#if DEPENDENCY_ALTPLAYERSTATE
-class TMData : AltPlayerState
-```
+* PluginMapType.CopyPaste_ApplyLightmapQualityToSelection
+* Item Labels
 
 
 

@@ -1,4 +1,5 @@
 void Main() {
+    IntroMessage = IntroMessage.Replace("<3", Icons::Heartbeat);
     startnew(WatchEditor);
 }
 
@@ -14,8 +15,10 @@ void WatchEditor() {
         if (prevEditorNull) {
             // run setup
             ConfigEditorUI();
+            g_EditorLabelsDone = false; // redo labels
         }
         prevEditorNull = false;
+        // todo
         CheckEditorLabels(editor);
         CheckEditorLightmap(editor);
         CheckHideMapInfo();
@@ -61,17 +64,85 @@ void CheckHideMapInfo() {
     challengeParams.IsHiddenExternal = S_HideMapInfo;
 }
 
+bool g_EditorLabelsDone = false;
+uint lastMobilsLength = 0;
 void CheckEditorLabels(CGameCtnEditorFree@ editor) {
-    // auto editor = cast<CGameCtnEditorFree>(GetApp().Editor);
-    // if (editor is null) {
-    //     trace('CheckEditorLabels: no editor');
-    //     return;
-    // }
+    // we need to run this frequently b/c elements are added/removed as the UI changes
+    // if (g_EditorLabelsDone) return;
 
-    while (editor.EditorInterface.InterfaceRoot is null) yield();
-    CControlFrameStyled@ root = cast<CControlFrameStyled>(editor.EditorInterface.InterfaceRoot);
-    if (root is null) return;
+    if (editor.EditorInterface.InterfaceScene is null) return;
+    auto scene = editor.EditorInterface.InterfaceScene;
+    if (scene is null) return;
 
+    // method 1, via scene.Mobils: doesn't always update immediatley with check but is performant; 1.5 ms checking Id.Name, 1.0 ms checking Id.Value
+    if (true) {
+        if (lastMobilsLength == scene.Mobils.Length) return;
+        // todo
+        for (uint i = 0; i < scene.Mobils.Length; i++) {
+            auto mobil = scene.Mobils[i];
+            // if (mobil.Id.GetName() != "EntryInfos") continue;
+            if (mobil.Id.Value != 0x40005b9b) continue;
+            mobil.IsVisible = S_ShowBlockLabels;
+        }
+    }
+    /*
+    // method 2, via InterfaceRoot, works perfectly, but ~1ms per frame, breaks with g_EditorLabelsDone check
+    else if (true) {
+        // if (g_EditorLabelsDone) return;
+        auto root = cast<CControlFrameStyled>(editor.EditorInterface.InterfaceRoot);
+        if (root is null) return;
+        // root > FrameMain > FrameInventories
+        auto frameInv = cast<CControlFrame>(root.Childs[0]).Childs[0];
+        RecurseSetLabelVisibility(frameInv);
+    } // method 3, via InterfaceRoot but like 20 ms per frame, breaks with g_EditorLabelsDone check
+    else if (false) {
+        // if (g_EditorLabelsDone) return;
+        auto root = cast<CControlFrameStyled>(editor.EditorInterface.InterfaceRoot);
+        if (root is null) return;
+        // root > FrameMain > FrameInventories
+        auto frameInv = cast<CControlFrame>(root.Childs[0]).Childs[0];
+        // RecurseSetLabelVisibility(node);
+        array<CControlBase@> nodes = {frameInv};
+        for (uint i = 0; i < nodes.Length; i++) {
+            auto node = nodes[i];
+            auto name = node.Id.GetName();
+            if (name.StartsWith("Pager")) continue;
+            if (name.StartsWith("TopRight")) continue;
+
+            auto frame = cast<CControlFrame>(node);
+
+            if (name == "ListCardArticles") {
+                auto childs = cast<CControlListCard>(node).ListCards;
+                for (uint j = 0; j < childs.Length; j++) {
+                    nodes.InsertLast(childs[j]);
+                }
+            } else if (frame !is null) {
+                auto childs = frame.Childs;
+                for (uint j = 0; j < childs.Length; j++) {
+                    nodes.InsertLast(childs[j]);
+                }
+            }
+
+            if (name == "EntryInfos") {
+                node.IsVisible = S_ShowBlockLabels;
+            }
+        }
+    } */
+
+    g_EditorLabelsDone = true;
+    lastMobilsLength = scene.Mobils.Length;
+}
+
+void RecurseSetLabelVisibility(CControlBase@ el) {
+    auto frame = cast<CControlFrame>(el);
+    if (frame !is null) {
+        for (uint i = 0; i < frame.Childs.Length; i++) {
+            RecurseSetLabelVisibility(frame.Childs[i]);
+        }
+    }
+    if (el.Id.GetName() == "EntryInfos") {
+        el.IsVisible = S_ShowBlockLabels;
+    }
 }
 
 mat3 uiScaleUVs;

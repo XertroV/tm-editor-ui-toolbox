@@ -17,7 +17,7 @@ bool S_HideMapInfo = true;
 [Setting hidden]
 bool S_ShowBlockLabels = false;
 
-const string TTIndicator = "\\$888" + Icons::QuestionCircle + "\\$z";
+const string TTIndicator = "  \\$888" + Icons::QuestionCircle + "\\$z";
 
 
 [SettingsTab name="Introduction" icon="Expand"]
@@ -29,12 +29,13 @@ void S_RenderIntroTab() {
 [SettingsTab name="Editor UI 'Scaling'" icon="Expand"]
 void S_RenderUIScaleTab() {
     vec4 orig_EditorDrawBounds = vec4(S_EditorDrawBounds);
+    bool orig_ShowBlockLabels = S_ShowBlockLabels;
 
     Heading("Editor UI Options");
-    S_HideMapInfo = UI::Checkbox("Hide Map Info? " + TTIndicator, S_HideMapInfo);
+    S_HideMapInfo = UI::Checkbox("Hide Map Info?" + TTIndicator, S_HideMapInfo);
     AddSimpleTooltip("Hides the green box in the top left that shows map name,\nauthor, coppers cost, and validation status.\n(Sets FrameChallengeParams.IsVisible = false)");
-    S_ShowBlockLabels = UI::Checkbox("Show All Block Labels in Inventory? " + TTIndicator, S_ShowBlockLabels);
-    AddSimpleTooltip("This will enable labels for the folders / blocks in the inventory.\nThese aren't usually visible.\nTo disable, restart the editor/game.");
+    S_ShowBlockLabels = UI::Checkbox("Show All Block Labels in Inventory?" + TTIndicator, S_ShowBlockLabels);
+    AddSimpleTooltip("This will enable labels for the folders / blocks in the inventory.\nThese aren't usually visible.\nTo disable, you might need to restart the editor/game.");
 
     Heading("Editor UI Quick Settings");
     QuickSetting_Bounds(EditorBounds_FS_Q, "Fullscreen (Standard Editor)");
@@ -73,12 +74,26 @@ void S_RenderUIScaleTab() {
     if (!Vec4Eq(orig_EditorDrawBounds, S_EditorDrawBounds)) {
         OnSettingsChanged();
     }
+
+    if (orig_ShowBlockLabels != S_ShowBlockLabels) {
+        g_EditorLabelsDone = false;
+    }
 }
 
+[Setting hidden]
+bool S_HoverIsSimilarlyScaled = true;
 
 [SettingsTab name="Hover Indicator" icon="HandPointerO"]
 void S_RenderHoverTab() {
+    S_HoverIsSimilarlyScaled = UI::Checkbox("Scale Hover Indicator based on Editor UI Scaling?" + TTIndicator, S_HoverIsSimilarlyScaled);
+    AddSimpleTooltip("The hover indicator is similarly scaled to the editor UI.\nIf the editor UI is in the bottom left of the screen,\nthe hover indicator is in the bottom left of the editor UI region.\nIf the editor is 25% of the screen's area and in the center-middle of the screen,\nthen the hover indicator is 25% of the UI's area and in the center-middle of the editor UI region.\nIf the Editor UI is fullscreen, then the hover indicator is also fullscreen.");
+    UI::BeginDisabled(S_HoverIsSimilarlyScaled);
+    DrawHoverCustomizations();
+    UI::EndDisabled();
+}
 
+void DrawHoverCustomizations() {
+    // todo
 }
 
 
