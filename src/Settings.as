@@ -17,6 +17,9 @@ bool S_HideMapInfo = true;
 [Setting hidden]
 bool S_ShowBlockLabels = false;
 
+[Setting hidden]
+bool S_AlwaysShowEditor = false;
+
 const string TTIndicator = "  \\$888" + Icons::QuestionCircle + "\\$z";
 
 
@@ -32,6 +35,9 @@ void S_RenderUIScaleTab() {
     bool orig_ShowBlockLabels = S_ShowBlockLabels;
 
     Heading("Editor UI Options");
+    S_AlwaysShowEditor = UI::Checkbox("Always Show Editor UI? \\$f84Unsafe!\\$z" + TTIndicator, S_AlwaysShowEditor);
+    AddSimpleTooltip("You will experience phantom UI clicks if you leave this on.\nIt's useful while adjusting the editor UI region, though.");
+
     S_HideMapInfo = UI::Checkbox("Hide Map Info?" + TTIndicator, S_HideMapInfo);
     AddSimpleTooltip("Hides the green box in the top left that shows map name,\nauthor, coppers cost, and validation status.\n(Sets FrameChallengeParams.IsVisible = false)");
     S_ShowBlockLabels = UI::Checkbox("Show All Block Labels in Inventory?" + TTIndicator, S_ShowBlockLabels);

@@ -207,13 +207,14 @@ void OnMouseMove(int x, int y) {
     // multiply mouse UV by -1:
     // max x -> right; max y -> bottom -- IN MOUSE COORDS
     // then usual region check
-    auto screenWH = vec2(Draw::GetWidth(), Draw::GetHeight());
-    vec2 mouseUV = (vec2(x, y) - screenWH * 0.5) / screenWH * -1;
-    g_HoveringOverEditor = g_HoveringOverEditor
+    // auto screenWH = vec2(Draw::GetWidth(), Draw::GetHeight());
+    // vec2 mouseUV = (vec2(x, y) - screenWH * 0.5) / screenWH * -1;
+    g_HoveringOverEditor = S_AlwaysShowEditor || (g_HoveringOverEditor
         ? IsWithin(vec2(x, y), uiPosPx, uiSizePx)
         // ? mouseUV.x > S_EditorDrawBounds.x && mouseUV.x < S_EditorDrawBounds.z
         // && mouseUV.y > S_EditorDrawBounds.y && mouseUV.y < S_EditorDrawBounds.w
-        : IsWithin(vec2(x, y), hoverAreaPos, hoverAreaSize);
+        : IsWithin(vec2(x, y), hoverAreaPos, hoverAreaSize)
+    )
         ;
 }
 

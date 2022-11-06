@@ -3,6 +3,11 @@
 todo:
 
 * PluginMapType.CopyPaste_ApplyLightmapQualityToSelection
+* hover customization
+*
+
+done:
+
 * Item Labels
 
 
