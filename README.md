@@ -4,7 +4,8 @@ todo:
 
 * PluginMapType.CopyPaste_ApplyLightmapQualityToSelection
 * hover customization
-*
+* drag to change editor size
+* full screen toggle button
 
 done:
 

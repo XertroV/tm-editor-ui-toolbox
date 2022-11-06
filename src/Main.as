@@ -1,6 +1,7 @@
 void Main() {
     IntroMessage = IntroMessage.Replace("<3", Icons::Heartbeat);
     startnew(WatchEditor);
+    startnew(InitButtons);
 }
 
 void WatchEditor() {
@@ -18,7 +19,6 @@ void WatchEditor() {
             g_EditorLabelsDone = false; // redo labels
         }
         prevEditorNull = false;
-        // todo
         CheckEditorLabels(editor);
         CheckEditorLightmap(editor);
         CheckHideMapInfo();
@@ -77,7 +77,6 @@ void CheckEditorLabels(CGameCtnEditorFree@ editor) {
     // method 1, via scene.Mobils: doesn't always update immediatley with check but is performant; 1.5 ms checking Id.Name, 1.0 ms checking Id.Value
     if (true) {
         if (lastMobilsLength == scene.Mobils.Length) return;
-        // todo
         for (uint i = 0; i < scene.Mobils.Length; i++) {
             auto mobil = scene.Mobils[i];
             // if (mobil.Id.GetName() != "EntryInfos") continue;
@@ -157,7 +156,8 @@ vec2 screenWH;
 vec2 hoverAreaSize;
 vec2 hoverAreaPos;
 
-float nvgFontSize = 50;
+[Setting hidden]
+float S_HoverFontSize = 50;
 
 void ConfigEditorUI() {
     auto editor = cast<CGameCtnEditorFree>(GetApp().Editor);
@@ -170,6 +170,12 @@ void ConfigEditorUI() {
 
     vec2 oMin = S_EditorDrawBounds.xyz.xy;
     vec2 oMax = vec2(S_EditorDrawBounds.z, S_EditorDrawBounds.w);
+
+    if (g_DrawEditorFullscreen) {
+        oMin = vec2(-1, -1);
+        oMax = vec2(1, 1);
+    }
+
     editor.EditorInterface.InterfaceScene.OverlayMin = oMin;
     editor.EditorInterface.InterfaceScene.OverlayMax = oMax;
 
@@ -191,32 +197,144 @@ void ConfigEditorUI() {
     hoverAreaSize = ScaleUvToPixels((uiScaleUVs * vec3(uiWH.x, uiWH.y, 1)).xy);
     hoverAreaPos = UICoordsToScreen((uiToUVs * vec3(0, 0, 1)).xy - uiWH / 2.);
 
-    nvgFontSize = Math::Min(screenWH.x, screenWH.y) / 30.;
+    if (S_HoverIsSimilarlyScaled)
+        S_HoverFontSize = Math::Min(screenWH.x, screenWH.y) / 30.;
+
+    while (fullscreenBtn is null || resizeDragBtn is null) yield();
+    auto uvBtnSize = ScaleUvToPixels((uiScaleUVs * vec3(0.1, 0.1, 1)).xy);
+    uvBtnSize.y = Math::Max(30., Math::Min(uvBtnSize.x, uvBtnSize.y));
+    uvBtnSize.x = uvBtnSize.y;
+    vec2 trCorner = uiPosPx + vec2(uiSizePx.x, 0) + vec2(-1, 1) * btnMargin;
+    auto resizeBtnPos = trCorner - vec2(uvBtnSize.x, 0);
+    auto posBtnPos = resizeBtnPos - vec2(uvBtnSize.x + btnMargin.x, 0);
+    auto fullscreenBtnPos = posBtnPos - vec2(uvBtnSize.x + btnMargin.x, 0);
+    fullscreenBtn.size = uvBtnSize;
+    fullscreenBtn.pos = fullscreenBtnPos;
+    resizeDragBtn.size = uvBtnSize;
+    resizeDragBtn.pos = resizeBtnPos;
+    posDragBtn.size = uvBtnSize;
+    posDragBtn.pos = posBtnPos;
+}
+
+
+void UpdateEditorSizeFromDrag() {
+    // calc TR corner from mouse cursor
+    vec2 targetPosNew = g_LastMousePos + vec2(1, -1) * (resizeDragBtn.size + btnMargin) / 2.;
+    vec2 newBounds = ScreenToUv(targetPosNew) * -1.;
+    S_EditorDrawBounds.x = newBounds.x;
+    S_EditorDrawBounds.w = newBounds.y;
+    ConfigEditorUI();
+}
+
+void UpdateEditorPosFromDrag() {
+    vec2 targetPosNew = g_LastMousePos + vec2(1, -1) * (vec2(1.5, .5) * (resizeDragBtn.size + btnMargin)) - vec2(uiSizePx.x, 0);
+    targetPosNew.x = Math::Min(Draw::GetWidth(), targetPosNew.x + uiSizePx.x) - uiSizePx.x;
+    targetPosNew.x = Math::Max(0, targetPosNew.x);
+    targetPosNew.y = Math::Min(Draw::GetHeight(), targetPosNew.y + uiSizePx.y) - uiSizePx.y;
+    targetPosNew.y = Math::Max(0, targetPosNew.y);
+    auto newBounds = ScreenToUv(targetPosNew);
+
+    vec2 oMin = S_EditorDrawBounds.xyz.xy;
+    vec2 oMax = vec2(S_EditorDrawBounds.z, S_EditorDrawBounds.w);
+    vec2 oDiff = oMax - oMin;
+
+    S_EditorDrawBounds.z = - newBounds.x;
+    S_EditorDrawBounds.x = S_EditorDrawBounds.z - oDiff.x;
+    S_EditorDrawBounds.w = - newBounds.y;
+    S_EditorDrawBounds.y = S_EditorDrawBounds.w - oDiff.y;
+    ConfigEditorUI();
 }
 
 
 bool g_HoveringOverEditor = false;
+vec2 g_LastMousePos;
 
 /** Called whenever the mouse moves. `x` and `y` are the viewport coordinates.
 */
 void OnMouseMove(int x, int y) {
     if (GetApp().Editor is null) return;
     if (!matriciesInitialized) return;
-    // max x -> left; min x -> right
-    // max y -> top; min y -> bottom
-    // multiply mouse UV by -1:
-    // max x -> right; max y -> bottom -- IN MOUSE COORDS
-    // then usual region check
-    // auto screenWH = vec2(Draw::GetWidth(), Draw::GetHeight());
-    // vec2 mouseUV = (vec2(x, y) - screenWH * 0.5) / screenWH * -1;
+    vec2 pos = vec2(x, y);
+    g_LastMousePos = pos;
     g_HoveringOverEditor = S_AlwaysShowEditor || (g_HoveringOverEditor
-        ? IsWithin(vec2(x, y), uiPosPx, uiSizePx)
+        ? IsWithin(pos, uiPosPx, uiSizePx)
         // ? mouseUV.x > S_EditorDrawBounds.x && mouseUV.x < S_EditorDrawBounds.z
         // && mouseUV.y > S_EditorDrawBounds.y && mouseUV.y < S_EditorDrawBounds.w
-        : IsWithin(vec2(x, y), hoverAreaPos, hoverAreaSize)
-    )
-        ;
+        : IsWithin(pos, hoverAreaPos, hoverAreaSize)
+    );
+    for (uint i = 0; i < buttons.Length; i++) {
+        buttons[i].UpdateMouse(pos);
+    }
 }
+
+vec2 btnMargin = vec2(10, 10);
+
+NvgButton@[] buttons;
+NvgButton@ fullscreenBtn;
+NvgButton@ resizeDragBtn;
+NvgButton@ posDragBtn;
+
+bool g_DrawEditorFullscreen = false;
+
+// Alternatives: Icons::Expand   , Icons::SearchPlus  , Icons::Plus
+const string fsBtnLabelExpand = Icons::PlusCircle;
+// Alternatives: Icons::Compress , Icons::SearchMinus , Icons::Minus
+const string fsBtnLabelReturn = Icons::MinusCircle;
+
+void ResetFullscreen() {
+    g_DrawEditorFullscreen = false;
+    fullscreenBtn.label = fsBtnLabelExpand;
+}
+
+void InitButtons() {
+    @fullscreenBtn = NvgButton();
+    fullscreenBtn.label = fsBtnLabelExpand;
+    @fullscreenBtn.onClick = function(NvgButton@ btn) {
+        g_DrawEditorFullscreen = !g_DrawEditorFullscreen;
+        fullscreenBtn.label = g_DrawEditorFullscreen ? fsBtnLabelReturn : fsBtnLabelExpand;
+        ConfigEditorUI();
+    };
+
+    @resizeDragBtn = NvgButton(vec2(100, 100), vec2(50, 50), Icons::Expand);
+    @resizeDragBtn.onDrag = function(NvgButton@ btn) {
+        UpdateEditorSizeFromDrag();
+        ResetFullscreen();
+    };
+
+    @posDragBtn = NvgButton();
+    posDragBtn.label = Icons::Arrows;
+    @posDragBtn.onDrag = function(NvgButton@ btn) {
+        UpdateEditorPosFromDrag();
+        ResetFullscreen();
+    };
+
+    buttons.InsertLast(fullscreenBtn);
+    buttons.InsertLast(resizeDragBtn);
+    buttons.InsertLast(posDragBtn);
+}
+
+void DrawButtons() {
+    for (uint i = 0; i < buttons.Length; i++) {
+        buttons[i].Draw();
+    }
+}
+
+/** Called whenever a mouse button is pressed. `x` and `y` are the viewport coordinates.
+*/
+UI::InputBlocking OnMouseButton(bool down, int button, int x, int y) {
+    bool isLeftBtn = button == 0;
+    if (!isLeftBtn) return UI::InputBlocking::DoNothing;
+    auto mousePos = vec2(x, y);
+    g_LastMousePos = mousePos;
+    bool blockClick = false;
+    for (uint i = 0; i < buttons.Length; i++) {
+        blockClick = blockClick || (!down && buttons[i].IsClicked); // releasing a clicked button
+        auto hovered = buttons[i].UpdateMouse(mousePos, down ? MouseUpdateClick::Down : MouseUpdateClick::Up);
+        blockClick = blockClick || (down && hovered); // clicking a button
+    }
+    return blockClick ? UI::InputBlocking::Block : UI::InputBlocking::DoNothing;
+}
+
 
 bool IsWithin(vec2 pos, vec2 topLeft, vec2 size) {
     vec2 d1 = topLeft - pos;
@@ -237,6 +355,7 @@ void Render() {
         auto editor = cast<CGameCtnEditorFree>(GetApp().Editor);
         // when editing an item this becomes CGameEditorItem
         if (editor is null) return;
+
         // auto elInventory = cast<CControlFrame>(editor.EditorInterface.InterfaceRoot.Childs[0]).Childs[0];
         auto elMainUI = editor.EditorInterface.InterfaceRoot.Childs[0];
         auto elMLOverlay = editor.EditorInterface.InterfaceRoot.Childs[8];
@@ -252,6 +371,7 @@ void Render() {
         }
         if (g_HoveringOverEditor) {
             ShowEditorWindowBounds();
+            DrawButtons();
         } else {
             // since the editor isn't visible we want to tell the user:
             DrawIndicatorOverlay();
@@ -264,27 +384,23 @@ vec2 UvToScreen(vec2 uv) {
     return uv * screenWH / 2. + screenWH / 2.;
 }
 
+vec2 ScreenToUv(vec2 pos) {
+    return (pos - screenWH / 2.) * 2. / screenWH;
+}
+
 vec2 UICoordsToScreen(vec2 ui) {
     return UvToScreen((uiToUVs * vec3(ui.x, ui.y, 1)).xy);
+}
+
+vec2 ScreenCoordsToUI(vec2 pos) {
+    auto uvPos = ScreenToUv(pos);
+    return (uvsToUi * vec3(uvPos.x, uvPos.y, 1)).xy;
 }
 
 vec2 ScaleUvToPixels(vec2 uv) {
     return uv / 2. * screenWH;
 }
 
-/** ui: vec2 with transformed-uv coords; maps (-1,1) -> range(ui._) */
-vec2 UiToUv(vec2 ui) {
-    return ui;
-    // auto s = .5;
-    // auto scale = mat3();
-    // scale.xx = -s;
-    // scale.yy = -s;
-    // scale.zz = 1;
-    // auto trans = mat3();
-    // trans.xx = 1;
-    // mat3::Scale(s);
-    // mat3::Translate(vec2())
-}
 
 const string HoverMsg = "Hover to Show UI";
 
@@ -300,10 +416,10 @@ void DrawIndicatorOverlay() {
     nvg::ClosePath();
     nvg::TextAlign(nvg::Align::Center | nvg::Align::Middle);
     nvg::FontFace(nvgMontSemiBold);
-    nvg::FontSize(nvgFontSize);
+    nvg::FontSize(S_HoverFontSize);
     auto textWidth = hoverAreaSize.x * 0.7;
     auto textBs = nvg::TextBoxBounds(hoverAreaSize.x * 0.7, HoverMsg);
-    vec2 textPos = hoverAreaPos + vec2(hoverAreaSize.x - textWidth, hoverAreaSize.y + nvgFontSize - textBs.y) / 2.; // - textBs; // + textBs;
+    vec2 textPos = hoverAreaPos + vec2(hoverAreaSize.x - textWidth, hoverAreaSize.y + S_HoverFontSize - textBs.y) / 2.; // - textBs; // + textBs;
     nvg::FillColor(S_HoverTextColor);
     nvg::TextBox(textPos, hoverAreaSize.x * 0.7, HoverMsg);
 }

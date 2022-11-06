@@ -23,7 +23,7 @@ bool S_AlwaysShowEditor = false;
 const string TTIndicator = "  \\$888" + Icons::QuestionCircle + "\\$z";
 
 
-[SettingsTab name="Introduction" icon="Expand"]
+[SettingsTab name="Introduction" icon="QuestionCircleO"]
 void S_RenderIntroTab() {
     RenderIntro();
 }
@@ -56,6 +56,7 @@ void S_RenderUIScaleTab() {
     VPad(.25);
     UI::TextWrapped("You can set a custom editor UI scale and placement using these sliders.");
     UI::TextWrapped("Note: they are not very intiutive. Use the quick settings buttons above to get a feel. Ctrl + click the sliders to set an exact value.");
+    UI::TextWrapped("You might find it easier to drag the " + Icons::Arrows + " button to dynamically resize the editor.");
     VPad(.25);
     if (UI::BeginTable("pos/size", 2, UI::TableFlags::SizingFixedFit)) {
         UI::TableNextColumn();
@@ -91,17 +92,107 @@ bool S_HoverIsSimilarlyScaled = true;
 
 [SettingsTab name="Hover Indicator" icon="HandPointerO"]
 void S_RenderHoverTab() {
-    S_HoverIsSimilarlyScaled = UI::Checkbox("Scale Hover Indicator based on Editor UI Scaling?" + TTIndicator, S_HoverIsSimilarlyScaled);
+    Heading("Hover Indicator");
+    S_HoverIsSimilarlyScaled = UI::Checkbox("Automatically Manage?" + TTIndicator, S_HoverIsSimilarlyScaled);
     AddSimpleTooltip("The hover indicator is similarly scaled to the editor UI.\nIf the editor UI is in the bottom left of the screen,\nthe hover indicator is in the bottom left of the editor UI region.\nIf the editor is 25% of the screen's area and in the center-middle of the screen,\nthen the hover indicator is 25% of the UI's area and in the center-middle of the editor UI region.\nIf the Editor UI is fullscreen, then the hover indicator is also fullscreen.");
+    UI::TextWrapped("This will scale the hover indicator based on Editor UI Scaling. It works well for an editor that takes up 1/4 of the screen.");
+    VPad(0.25);
+    UI::Text("Manage color settings in the appearance tab.");
     UI::BeginDisabled(S_HoverIsSimilarlyScaled);
     DrawHoverCustomizations();
     UI::EndDisabled();
 }
 
-void DrawHoverCustomizations() {
-    // todo
-}
+[Setting hidden]
+bool S_HoverManualPosition = false;
 
+[Setting hidden]
+vec2 S_HoverUiUvPosition = vec2(-1, 0.3);
+
+enum HorizAlign { Left, Center, Right }
+enum VertAlign { Top, Middle, Bottom }
+
+[Setting hidden]
+HorizAlign S_HoverHorizAlign = HorizAlign::Left;
+
+[Setting hidden]
+VertAlign S_HoverVertAlign = VertAlign::Bottom;
+
+[Setting hidden]
+bool S_HoverManualSize = false;
+
+[Setting hidden]
+vec2 S_HoverSize = vec2(300, 180);
+
+[Setting hidden]
+bool S_HoverAutoSizeEnableMinimum = true;
+
+[Setting hidden]
+vec2 S_HoverAutoSizeMinimumPx = vec2(120, 70);
+
+[Setting hidden]
+float S_HoverAutoSizePercent = 30;
+
+
+void DrawHoverCustomizations() {
+    SubHeading("Hover Indicator Position");
+
+    S_HoverManualPosition = UI::Checkbox("Manually Position?", S_HoverManualPosition);
+
+    /* auto position stuff */
+
+    UI::BeginDisabled(S_HoverManualPosition);
+    SubSubHeading("Automatic Positioning Alignment");
+    if (UI::BeginCombo("Horizontal Alignment", tostring(S_HoverHorizAlign))) {
+        for (uint i = 0; i < 3; i++) {
+            if (UI::Selectable(tostring(HorizAlign(i)), i == uint(S_HoverHorizAlign))) {
+                S_HoverHorizAlign = HorizAlign(i);
+            }
+        }
+        UI::EndCombo();
+    }
+    if (UI::BeginCombo("Vertical Alignment", tostring(S_HoverVertAlign))) {
+        for (uint i = 0; i < 3; i++) {
+            if (UI::Selectable(tostring(VertAlign(i)), i == uint(S_HoverVertAlign))) {
+                S_HoverVertAlign = VertAlign(i);
+            }
+        }
+        UI::EndCombo();
+    }
+    UI::EndDisabled();
+
+    /* manual positioning */
+
+    UI::BeginDisabled(!S_HoverManualPosition);
+    SubSubHeading("Manual Positioning");
+    VPad(0.25);
+    UI::TextWrapped("Note: coordinates are in UI-scaled UVs: top left is (-1, -1) and bottom right is (1, 1).");
+    S_HoverUiUvPosition = UI::SliderFloat2("Position", S_HoverUiUvPosition, -1., 1.);
+    UI::EndDisabled();
+
+
+    SubHeading("Hover Indicator Size");
+    S_HoverManualSize = UI::Checkbox("Manually Size?", S_HoverManualSize);
+
+    /* auto sizing */
+
+    UI::BeginDisabled(S_HoverManualSize);
+
+    SubSubHeading("Automatic Sizing");
+    S_HoverAutoSizePercent = UI::SliderFloat("Size as % of UI region", S_HoverAutoSizePercent, 0, 100, "%.1f");
+    S_HoverAutoSizeEnableMinimum = UI::Checkbox("Enable Minimum Size?", S_HoverAutoSizeEnableMinimum);
+    S_HoverAutoSizeMinimumPx = UI::SliderFloat2("Minimum Size (px)", S_HoverAutoSizeMinimumPx, 10, Draw::GetHeight() / 4.);
+
+    UI::EndDisabled();
+    /* manual sizing */
+
+    UI::BeginDisabled(!S_HoverManualSize);
+    SubSubHeading("Manual Sizing");
+    S_HoverSize = UI::SliderFloat2("Size (px)", S_HoverSize, 0, Draw::GetWidth());
+
+    UI::EndDisabled();
+
+}
 
 
 void QuickSetting_Bounds(vec4 bounds, const string &in name, bool addSameLine = true) {
