@@ -46,6 +46,6 @@ XertroV
 """;
 
 void RenderSlideZero() {
-    Heading("Rescale Editor UI Intro");
+    Heading("Editor UI Toolbox Intro");
     UI::TextWrapped(IntroMessage);
 }

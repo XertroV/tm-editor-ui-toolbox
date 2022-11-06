@@ -13,7 +13,8 @@ void WatchEditor() {
             prevEditorNull = true;
             continue;
         }
-        if (prevEditorNull) {
+        bool resolutionChanged = int(screenWH.x) != Draw::GetWidth() || int(screenWH.y) != Draw::GetHeight();
+        if (prevEditorNull || resolutionChanged) {
             // run setup
             ConfigEditorUI();
             g_EditorLabelsDone = false; // redo labels
@@ -53,16 +54,24 @@ void CheckEditorLightmap(CGameCtnEditorFree@ editor) {
 }
 
 CControlContainer@ GetFrameMain(CGameCtnApp@ app) {
-    auto editor = cast<CGameCtnEditorFree>(app.Editor);
-    auto uiSuperRoot = cast<CControlFrameStyled>(editor.EditorInterface.InterfaceRoot);
-    auto frameMain = cast<CControlContainer>(uiSuperRoot.Childs[0]);
-    return frameMain;
+    try {
+        auto editor = cast<CGameCtnEditorFree>(app.Editor);
+        auto uiSuperRoot = cast<CControlFrameStyled>(editor.EditorInterface.InterfaceRoot);
+        auto frameMain = cast<CControlContainer>(uiSuperRoot.Childs[0]);
+        return frameMain;
+    } catch {
+        warn("exception getting main frame: " + getExceptionInfo());
+        return null;
+    }
 }
 
 void CheckHideMapInfo() {
     auto frameMain = GetFrameMain(GetApp());
+    if (frameMain is null) return;
     auto challengeParams = cast<CControlFrame>(frameMain.Childs[7]);
+    if (challengeParams is null) return;
     challengeParams.IsHiddenExternal = S_HideMapInfo;
+    challengeParams.IsVisible = !S_HideMapInfo;
 }
 
 bool g_EditorLabelsDone = false;
@@ -214,7 +223,7 @@ void ConfigEditorUI() {
     vec2 oMin = S_EditorDrawBounds.xyz.xy;
     vec2 oMax = vec2(S_EditorDrawBounds.z, S_EditorDrawBounds.w);
 
-    if (g_DrawEditorFullscreen) {
+    if (S_DrawEditorFullscreen) {
         oMin = vec2(-1, -1);
         oMax = vec2(1, 1);
     }
@@ -301,6 +310,8 @@ void UpdateEditorSizeFromDrag() {
     // calc TR corner from mouse cursor
     vec2 targetPosNew = g_LastMousePos + vec2(1, -1) * (resizeDragBtn.size + btnMargin) / 2.;
     vec2 newBounds = ScreenToUv(targetPosNew) * -1.;
+    newBounds.x = Math::Max(newBounds.x, -1);
+    newBounds.y = Math::Min(newBounds.y, 1);
     S_EditorDrawBounds.x = newBounds.x;
     S_EditorDrawBounds.w = newBounds.y;
     ConfigEditorUI();
@@ -329,6 +340,8 @@ void UpdateEditorPosFromDrag() {
 bool g_MouseHoveringInventory = false;
 bool g_HoveringOverEditor = false;
 vec2 g_LastMousePos;
+uint g_LastEditorHoverTime = 0;
+const uint EditorHoverTimeout = 200;
 
 /** Called whenever the mouse moves. `x` and `y` are the viewport coordinates.
 */
@@ -338,12 +351,10 @@ void OnMouseMove(int x, int y) {
     if (!matriciesInitialized) return;
     vec2 pos = vec2(x, y);
     g_LastMousePos = pos;
-    g_HoveringOverEditor = S_AlwaysShowEditor || (g_HoveringOverEditor
-        ? IsWithin(pos, uiPosPx, uiSizePx)
-        // ? mouseUV.x > S_EditorDrawBounds.x && mouseUV.x < S_EditorDrawBounds.z
-        // && mouseUV.y > S_EditorDrawBounds.y && mouseUV.y < S_EditorDrawBounds.w
-        : IsWithin(pos, hoverAreaPos, hoverAreaSize)
-    );
+    bool activelyHovering = IsWithin(pos, hoverAreaPos, hoverAreaSize)
+        || (g_HoveringOverEditor && IsWithin(pos, uiPosPx, uiSizePx));
+    g_HoveringOverEditor = S_AlwaysShowEditor || activelyHovering || (Time::Now - g_LastEditorHoverTime < EditorHoverTimeout);
+    if (activelyHovering) g_LastEditorHoverTime = Time::Now;
     g_MouseHoveringInventory = g_HoveringOverEditor && (
         IsInventoryFrameFocused(pos)
     );
@@ -359,7 +370,8 @@ NvgButton@ fullscreenBtn;
 NvgButton@ resizeDragBtn;
 NvgButton@ posDragBtn;
 
-bool g_DrawEditorFullscreen = false;
+[Setting hidden]
+bool S_DrawEditorFullscreen = false;
 
 // Alternatives: Icons::Expand   , Icons::SearchPlus  , Icons::Plus
 const string fsBtnLabelExpand = Icons::PlusCircle;
@@ -367,7 +379,7 @@ const string fsBtnLabelExpand = Icons::PlusCircle;
 const string fsBtnLabelReturn = Icons::MinusCircle;
 
 void ResetFullscreen() {
-    g_DrawEditorFullscreen = false;
+    S_DrawEditorFullscreen = false;
     fullscreenBtn.label = fsBtnLabelExpand;
 }
 
@@ -375,8 +387,8 @@ void InitButtons() {
     @fullscreenBtn = NvgButton();
     fullscreenBtn.label = fsBtnLabelExpand;
     @fullscreenBtn.onClick = function(NvgButton@ btn) {
-        g_DrawEditorFullscreen = !g_DrawEditorFullscreen;
-        fullscreenBtn.label = g_DrawEditorFullscreen ? fsBtnLabelReturn : fsBtnLabelExpand;
+        S_DrawEditorFullscreen = !S_DrawEditorFullscreen;
+        fullscreenBtn.label = S_DrawEditorFullscreen ? fsBtnLabelReturn : fsBtnLabelExpand;
         ConfigEditorUI();
     };
 
@@ -407,6 +419,8 @@ void DrawButtons() {
 /** Called whenever a mouse button is pressed. `x` and `y` are the viewport coordinates.
 */
 UI::InputBlocking OnMouseButton(bool down, int button, int x, int y) {
+    auto editor = cast<CGameCtnEditorFree>(GetApp().Editor);
+    if (editor is null) return UI::InputBlocking::DoNothing;
     bool isLeftBtn = button == 0;
     if (!isLeftBtn) return UI::InputBlocking::DoNothing;
     auto mousePos = vec2(x, y);

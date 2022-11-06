@@ -12,7 +12,7 @@ vec4 S_EditorDrawBounds = EditorBounds_BL_Q; // bottom left
 // vec4 S_EditorDrawBounds = vec4(-1, -1, 1, 1); // full screen
 
 [Setting hidden]
-bool S_HideMapInfo = true;
+bool S_HideMapInfo = false;
 
 [Setting hidden]
 bool S_ShowBlockLabels = false;
@@ -148,7 +148,7 @@ vec2 S_HoverSize = vec2(300, 180);
 bool S_HoverAutoSizeEnableMinimum = true;
 
 [Setting hidden]
-vec2 S_HoverAutoSizeMinimumPx = vec2(120, 70);
+vec2 S_HoverAutoSizeMinimumPx = vec2(300, 180);
 
 [Setting hidden]
 vec2 S_HoverAutoSizePercent = vec2(30, 30);
