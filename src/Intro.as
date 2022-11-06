@@ -11,7 +11,7 @@ This plugin will help make the editor UI less intrusive. But it comes with some 
 There are also some other useful features.
 
 It will make the UI smaller, but it does not give you more items on screen, etc. It's not native scaling, just a hack.
-Other Editor UI's (items, mediatracker, etc) should be uneffected.
+Other Editor UIs (items, mediatracker, etc) should be unaffected.
 
 When the UI is scaled down, the game registers clicks on UI buttons in two places: where the button\$f84 is\$z on screen, and where the button\$f84 would be\$z on screen at 100% scale.
 So, if the editor is small, you could try and place a block on a blank part of the screen and the UI thinks you selected a different block. That sort of thing can happen.
@@ -31,6 +31,8 @@ The size and location of the UI is compeltely configurable, as is the size/locat
 
 Additionally, this plugin will let you:
 - Hide the Map info in the top left of the UI.
+- Show labels for all inventory items / folders (if a label exists).
+- Auto-hide the inventory (just like if you pressed tab).
 - Disable some lighting features that might help with large maps / lightmap recalculations. (Suggestion: have the lightmap setting on very low while editing, too.)
 
 I hope you find this plugin useful.
