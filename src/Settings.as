@@ -51,7 +51,15 @@ void S_RenderUIScaleTab() {
     AddSimpleTooltip("This will enable labels for the folders / blocks in the inventory.\nThese aren't usually visible.\nTo disable, you might need to restart the editor/game.");
 
     S_AutoHideInventory = UI::Checkbox("Auto-hide the Inventory? (Auto TAB)" + TTIndicator, S_AutoHideInventory);
-    AddSimpleTooltip("This will auto-hide the inventory (blocks / items / macroblocks / etc) when the mouse\nis not hovering over it, and re-show it when the mouse enters that region again.\nUseful in fullscreen mode.");
+    AddSimpleTooltip("This will auto-hide the inventory (blocks / items / macroblocks / etc) when the mouse\nis not hovering over it, and re-show it when the mouse enters that region again.\nUseful in fullscreen mode. Also helps with phantom misclicks.");
+    if (S_AutoHideInventory) {
+        S_InventoryFocusTimeoutSeconds = UI::SliderFloat("Auto-hide Timeout (s)", S_InventoryFocusTimeoutSeconds, 0., 3.);
+    }
+    // if (UI::BeginChild("timeout child")) {
+    //     UI::BeginDisabled(!S_AutoHideInventory);
+    //     UI::EndDisabled();
+    // }
+    // UI::EndChild();
 
     S_ShowDebugRegions = UI::Checkbox("Draw Debug Regions?" + TTIndicator, S_ShowDebugRegions);
     AddSimpleTooltip("This will draw the regions where hover things activate if they are invisible.\n(E.g., the auto-unhide inventory activation region)");
@@ -91,7 +99,7 @@ void S_RenderUIScaleTab() {
 
 
     if (!Vec4Eq(orig_EditorDrawBounds, S_EditorDrawBounds)) {
-        OnSettingsChanged();
+        startnew(OnSettingsChanged);
     }
 
     if (orig_ShowBlockLabels != S_ShowBlockLabels) {
@@ -143,11 +151,20 @@ bool S_HoverAutoSizeEnableMinimum = true;
 vec2 S_HoverAutoSizeMinimumPx = vec2(120, 70);
 
 [Setting hidden]
-float S_HoverAutoSizePercent = 30;
+vec2 S_HoverAutoSizePercent = vec2(30, 30);
 
 
 void DrawHoverCustomizations() {
     SubHeading("Hover Indicator Position");
+    bool orig_S_HoverManualPosition = S_HoverManualPosition;
+    bool orig_S_HoverManualSize = S_HoverManualSize;
+    auto orig_S_HoverAutoSizeEnableMinimum = S_HoverAutoSizeEnableMinimum;
+    auto orig_S_HoverHorizAlign = S_HoverHorizAlign;
+    auto orig_S_HoverVertAlign = S_HoverVertAlign;
+    auto orig_S_HoverUiUvPosition = S_HoverUiUvPosition;
+    auto orig_S_HoverAutoSizePercent = S_HoverAutoSizePercent;
+    auto orig_S_HoverAutoSizeMinimumPx = S_HoverAutoSizeMinimumPx;
+    auto orig_S_HoverSize = S_HoverSize;
 
     S_HoverManualPosition = UI::Checkbox("Manually Position?", S_HoverManualPosition);
 
@@ -180,6 +197,12 @@ void DrawHoverCustomizations() {
     VPad(0.25);
     UI::TextWrapped("Note: coordinates are in UI-scaled UVs: top left is (-1, -1) and bottom right is (1, 1).");
     S_HoverUiUvPosition = UI::SliderFloat2("Position", S_HoverUiUvPosition, -1., 1.);
+
+    auto brCorner = hoverAreaPos + hoverAreaSize;
+    if (S_HoverManualPosition && !IsWithin(brCorner, uiPosPx, uiSizePx)) {
+        UI::TextWrapped("\\$f84Warning! Some part of the hover interface is outside of the Editor UI region! This is bad.");
+    }
+
     UI::EndDisabled();
 
 
@@ -191,9 +214,9 @@ void DrawHoverCustomizations() {
     UI::BeginDisabled(S_HoverManualSize);
 
     SubSubHeading("Automatic Sizing");
-    S_HoverAutoSizePercent = UI::SliderFloat("Size as % of UI region", S_HoverAutoSizePercent, 0, 100, "%.1f");
+    S_HoverAutoSizePercent = UI::SliderFloat2("Size as % of UI region", S_HoverAutoSizePercent, 0, 100, "%.1f");
     S_HoverAutoSizeEnableMinimum = UI::Checkbox("Enable Minimum Size?", S_HoverAutoSizeEnableMinimum);
-    S_HoverAutoSizeMinimumPx = UI::SliderFloat2("Minimum Size (px)", S_HoverAutoSizeMinimumPx, 10, Draw::GetHeight() / 4.);
+    S_HoverAutoSizeMinimumPx = UI::SliderFloat2("Minimum Size (px)", S_HoverAutoSizeMinimumPx, 10, Math::Min(Draw::GetHeight() / 2., uiSizePx.y));
 
     UI::EndDisabled();
     /* manual sizing */
@@ -204,6 +227,18 @@ void DrawHoverCustomizations() {
 
     UI::EndDisabled();
 
+    bool changed = false
+        || orig_S_HoverManualPosition != S_HoverManualPosition
+        || orig_S_HoverManualSize != S_HoverManualSize
+        || orig_S_HoverHorizAlign != S_HoverHorizAlign
+        || orig_S_HoverVertAlign != S_HoverVertAlign
+        || orig_S_HoverAutoSizeEnableMinimum != S_HoverAutoSizeEnableMinimum
+        || !Vec2Eq(orig_S_HoverAutoSizePercent, S_HoverAutoSizePercent)
+        || !Vec2Eq(orig_S_HoverUiUvPosition, S_HoverUiUvPosition)
+        || !Vec2Eq(orig_S_HoverAutoSizeMinimumPx, S_HoverAutoSizeMinimumPx)
+        || !Vec2Eq(orig_S_HoverSize, S_HoverSize)
+        ;
+    if (changed) startnew(OnSettingsChanged);
 }
 
 
@@ -252,8 +287,7 @@ bool S_LM_ForceLowQuality = false;
 
 [SettingsTab name="Lightmap" icon="LightbulbO"]
 void S_RenderLightMapTab() {
-    Heading("Editor UI Options");
-    VPad(.25);
+    Heading("Lighting / Lightmap Options");
     UI::TextWrapped("\\$f84Note: Experimental!\\$z Shouldn't crash your game, but might not actually work...");
     VPad(.5);
 

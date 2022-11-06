@@ -10,6 +10,8 @@ todo:
 done:
 
 * Item Labels
+* autohide inventory
+
 
 
 

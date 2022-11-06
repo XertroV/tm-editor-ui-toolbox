@@ -160,11 +160,16 @@ void CheckAutoHideInventory(CGameCtnEditorFree@ editor) {
 }
 
 [Setting hidden]
-uint inventoryFocusTimeoutSeconds = 0.25;
+float S_InventoryFocusTimeoutSeconds = 0.9;
 
 uint lastTimeFocused = 0;
-bool IsInventoryFrameFocused() {
-    bool defaultResp = Time::Now - lastTimeFocused < uint(inventoryFocusTimeoutSeconds * 1000);
+bool IsInventoryFrameFocused(vec2 pos) {
+    bool defaultResp = Time::Now - lastTimeFocused < uint(S_InventoryFocusTimeoutSeconds * 1000);
+    bool mouseInActiveArea = IsWithin(pos, inventoryAreaPos, inventoryAreaSize);
+    if (mouseInActiveArea) {
+        lastTimeFocused = Time::Now;
+        return true;
+    }
     try {
         auto frameMain = cast<CControlContainer>(cast<CGameCtnEditorFree>(GetApp().Editor).EditorInterface.InterfaceRoot.Childs[0]);
         if (frameMain is null) return defaultResp;
@@ -232,12 +237,13 @@ void ConfigEditorUI() {
     uiPosPx = UICoordsToScreen(vec2(-1, -1));
     uiSizePx = ScaleUvToPixels(uiWH);
 
-    hoverAreaSize = ScaleUvToPixels((uiScaleUVs * vec3(uiWH.x, uiWH.y, 1)).xy);
-    // In effect, apply this twice to make a similar scaled down version
-    hoverAreaPos = UICoordsToScreen((uiToUVs * vec3(0, 0, 1)).xy - uiWH / 2.);
+    CalculateHoverAreaSize();
 
-    inventoryAreaSize = ScaleUvToPixels((uiScaleUVs * vec3(2, .4, 1)).xy);
-    inventoryAreaPos = UICoordsToScreen(vec2(-1, .6));
+    // enough to cover the variant blocks on the LSH (e.g. the platform alts)
+    // complete coverage: .85, partial (enough with timeout) .7, with generous timeout .4
+    float inventoryHoverHeight = .3;
+    inventoryAreaSize = ScaleUvToPixels((uiScaleUVs * vec3(2, inventoryHoverHeight, 1)).xy);
+    inventoryAreaPos = UICoordsToScreen(vec2(-1, 1. - inventoryHoverHeight));
 
     if (S_HoverIsSimilarlyScaled)
         S_HoverFontSize = Math::Min(screenWH.x, screenWH.y) / 30.;
@@ -256,6 +262,38 @@ void ConfigEditorUI() {
     resizeDragBtn.pos = resizeBtnPos;
     posDragBtn.size = uvBtnSize;
     posDragBtn.pos = posBtnPos;
+}
+
+void CalculateHoverAreaSize() {
+    if (S_HoverIsSimilarlyScaled) {
+        hoverAreaSize = ScaleUvToPixels((uiScaleUVs * vec3(uiWH.x, uiWH.y, 1)).xy);
+        // In effect, apply this twice to make a similar scaled down version
+        hoverAreaPos = UICoordsToScreen((uiToUVs * vec3(0, 0, 1)).xy - uiWH / 2.);
+        return;
+    }
+
+    if (!S_HoverManualSize) {
+        // automatic sizing
+        hoverAreaSize = uiSizePx * (S_HoverAutoSizePercent / 100.);
+        if (S_HoverAutoSizeEnableMinimum) {
+            hoverAreaSize.x = Math::Max(hoverAreaSize.x, S_HoverAutoSizeMinimumPx.x);
+            hoverAreaSize.y = Math::Max(hoverAreaSize.y, S_HoverAutoSizeMinimumPx.y);
+        }
+    } else {
+        // manual sizing
+        hoverAreaSize = S_HoverSize;
+    }
+
+    if (!S_HoverManualPosition) {
+        // automatic positioning
+        vec2 alignMult = vec2(float(uint(S_HoverHorizAlign)) / 2., float(uint(S_HoverVertAlign)) / 2.);
+        vec2 offset = hoverAreaSize * alignMult;
+        vec2 pos = uiPosPx + uiSizePx * alignMult - offset;
+        hoverAreaPos = pos;
+    } else {
+        // manual positioning
+        hoverAreaPos = UICoordsToScreen(S_HoverUiUvPosition);
+    }
 }
 
 
@@ -307,7 +345,7 @@ void OnMouseMove(int x, int y) {
         : IsWithin(pos, hoverAreaPos, hoverAreaSize)
     );
     g_MouseHoveringInventory = g_HoveringOverEditor && (
-        IsWithin(pos, inventoryAreaPos, inventoryAreaSize) || IsInventoryFrameFocused()
+        IsInventoryFrameFocused(pos)
     );
     for (uint i = 0; i < buttons.Length; i++) {
         buttons[i].UpdateMouse(pos);
@@ -439,6 +477,10 @@ vec2 ScreenToUv(vec2 pos) {
     return (pos - screenWH / 2.) * 2. / screenWH;
 }
 
+// vec2 ScaleScreenToUv(vec2 size) {
+//     return size * 2. / screenWH;
+// }
+
 vec2 UICoordsToScreen(vec2 ui) {
     return UvToScreen((uiToUVs * vec3(ui.x, ui.y, 1)).xy);
 }
@@ -451,6 +493,10 @@ vec2 ScreenCoordsToUI(vec2 pos) {
 vec2 ScaleUvToPixels(vec2 uv) {
     return uv / 2. * screenWH;
 }
+
+// vec2 ScaleUiUvToPixles(vec2 ui) {
+//     return ScaleUvToPixels((uiToUVs * vec3(ui.x, ui.y, 1)).xy);
+// }
 
 
 const string HoverMsg = "Hover to Show UI";
@@ -500,4 +546,15 @@ bool Vec4Eq(vec4 a, vec4 b) {
         && a.z == b.z
         && a.w == b.w
         ;
+}
+
+bool Vec2Eq(vec2 a, vec2 b) {
+    return true
+        && a.x == b.x
+        && a.y == b.y
+        ;
+}
+
+vec3 V2ToAffine(vec2 v) {
+    return vec3(v.x, v.y, 1);
 }
