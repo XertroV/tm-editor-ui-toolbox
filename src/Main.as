@@ -2,6 +2,7 @@ void Main() {
     IntroMessage = IntroMessage.Replace("<3", Icons::Heartbeat);
     startnew(WatchEditor);
     startnew(InitButtons);
+    // startnew(WatchComputeShadowsIntercept);
 }
 
 void WatchEditor() {
@@ -51,6 +52,28 @@ void CheckEditorLightmap(CGameCtnEditorFree@ editor) {
     highlightsLight.IsActive = lightOn;
     highlightsLight.Light.LightMapOnly = lmOnly;
     highlightsLight.Light.IsShadowGen = shadowGen;
+    if (S_LM_EnableUltra) Set_LM_QUltra(); // only run this if we're going to set it to true, otherwise it'll be disabled when the setting value changes.
+    if (S_LM_SizeMax1k) Set_LM_SizeMax();
+}
+
+void Set_LM_QUltra() {
+    try {
+        auto disaplaySettings = GetApp().Viewport.SystemConfig.Display;
+        disaplaySettings.LM_QUltra = S_LM_EnableUltra;
+    } catch {
+        warn('exception getting display settings: ' + getExceptionInfo());
+    }
+}
+
+void Set_LM_SizeMax() {
+    try {
+        auto disaplaySettings = GetApp().Viewport.SystemConfig.Display;
+        disaplaySettings.LM_SizeMax = S_LM_SizeMax1k
+            ? CSystemConfigDisplay::ELightMapSizeMax::_LightMapSizeMax_1k_2
+            : CSystemConfigDisplay::ELightMapSizeMax::_LightMapSizeMax_Auto;
+    } catch {
+        warn('exception getting display settings: ' + getExceptionInfo());
+    }
 }
 
 CControlContainer@ GetFrameMain(CGameCtnApp@ app) {
@@ -449,6 +472,17 @@ bool IsWithin(vec2 pos, vec2 topLeft, vec2 size) {
         ;
 }
 
+/** Called every frame. `dt` is the delta time (milliseconds since last frame).
+*/
+void Update(float dt) {
+    if (cast<CGameCtnEditorFree>(GetApp().Editor) is null) {
+        g_HoveringOverEditor = false;
+    }
+    for (uint i = 0; i < buttons.Length; i++) {
+        buttons[i].IsVisible = g_HoveringOverEditor;
+    }
+}
+
 /** Render function called every frame.
 */
 void Render() {
@@ -476,9 +510,9 @@ void Render() {
                 el.IsHiddenExternal = true;
             }
         }
+        DrawButtons();
         if (g_HoveringOverEditor) {
             ShowEditorWindowBounds();
-            DrawButtons();
         } else {
             // since the editor isn't visible we want to tell the user:
             DrawIndicatorOverlay();

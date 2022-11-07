@@ -32,7 +32,7 @@ class NvgButton {
     bool UpdateMouse(vec2 mousePos, MouseUpdateClick clickType = MouseUpdateClick::NoChange) {
         if (!IsVisible) return false;
         isHovered = IsWithin(mousePos, pos, size);
-        if (clickType == MouseUpdateClick::Down) isClicked = isHovered;
+        if (clickType == MouseUpdateClick::Down) isClicked = (isHovered && IsVisible);
         if (clickType == MouseUpdateClick::Up) isClicked = false;
         if (isClicked && clickType == MouseUpdateClick::Down && onClick !is null) onClick(this);
         if (isClicked && clickType == MouseUpdateClick::NoChange && onDrag !is null) onDrag(this);

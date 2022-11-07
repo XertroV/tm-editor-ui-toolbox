@@ -288,6 +288,12 @@ bool S_LM_DisableShadows = false;
 [Setting hidden name="Force Next Item/Block Lowest Lightmap Quality?"]
 bool S_LM_ForceLowQuality = false;
 
+[Setting hidden]
+bool S_LM_EnableUltra = false;
+
+[Setting hidden]
+bool S_LM_SizeMax1k = false;
+
 [SettingsTab name="Lightmap" icon="LightbulbO"]
 void S_RenderLightMapTab() {
     Heading("Lighting / Lightmap Options");
@@ -300,5 +306,21 @@ void S_RenderLightMapTab() {
     S_LM_ForceLowQuality = UI::Checkbox("Force Next Item/Block Lowest Lightmap Quality? " + TTIndicator, S_LM_ForceLowQuality);
     AddSimpleTooltip("May improve performance wrt block placement and lightmap calculations.");
 
+    // doesn't seem to do anything
+    // S_BlockComputeShadows = UI::Checkbox("Block calls to ComputeShadows?" + TTIndicator, S_BlockComputeShadows);
+    // AddSimpleTooltip("Experimental: calls to CGameEditorPluginMap.ComputeShadows will be blocked.");
 
+    bool orig_S_LM_EnableUltra = S_LM_EnableUltra;
+    S_LM_EnableUltra = UI::Checkbox("Unable Ultra Lightmap Generation?" + TTIndicator, S_LM_EnableUltra);
+    AddSimpleTooltip("Enables the flag LM_QUltra in display settings.");
+    if (orig_S_LM_EnableUltra != S_LM_EnableUltra) {
+        Set_LM_QUltra();
+    }
+
+    bool orig_S_LM_SizeMax1k = S_LM_SizeMax1k;
+    S_LM_SizeMax1k = UI::Checkbox("Set Maximum Lightmap size to 1k^2 (~3x LM Ultra generation speedup)" + TTIndicator, S_LM_SizeMax1k);
+    AddSimpleTooltip("Sets LM_SizeMax to `1k^2` (default is `Auto`).");
+    if (orig_S_LM_SizeMax1k != S_LM_SizeMax1k) {
+        Set_LM_SizeMax();
+    }
 }
