@@ -99,7 +99,8 @@ void CheckHideMapInfo() {
 
 bool g_EditorLabelsDone = false;
 uint lastMobilsLength = 0;
-void CheckEditorLabels(CGameCtnEditorFree@ editor) {
+uint lastForceOn = 0;
+void CheckEditorLabels(CGameCtnEditorFree@ editor, bool force = false) {
     // we need to run this frequently b/c elements are added/removed as the UI changes
     // if (g_EditorLabelsDone) return;
 
@@ -107,9 +108,14 @@ void CheckEditorLabels(CGameCtnEditorFree@ editor) {
     auto scene = editor.EditorInterface.InterfaceScene;
     if (scene is null) return;
 
+    if (lastForceOn + 2000 < Time::Now) {
+        force = true;
+        lastForceOn = Time::Now;
+    }
+
     // method 1, via scene.Mobils: doesn't always update immediatley with check but is performant; 1.5 ms checking Id.Name, 1.0 ms checking Id.Value
     if (true) {
-        if (lastMobilsLength == scene.Mobils.Length) return;
+        if (!force && lastMobilsLength == scene.Mobils.Length) return;
         for (uint i = 0; i < scene.Mobils.Length; i++) {
             auto mobil = scene.Mobils[i];
             // if (mobil.Id.GetName() != "EntryInfos") continue;
