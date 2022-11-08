@@ -118,8 +118,8 @@ void CheckEditorLabels(CGameCtnEditorFree@ editor, bool force = false) {
         if (!force && lastMobilsLength == scene.Mobils.Length) return;
         for (uint i = 0; i < scene.Mobils.Length; i++) {
             auto mobil = scene.Mobils[i];
-            // if (mobil.Id.GetName() != "EntryInfos") continue;
-            if (mobil.Id.Value != 0x40005b9b) continue;
+            if (mobil.Id.GetName() != "EntryInfos") continue;
+            // if (mobil.Id.Value != 0x40005b9b) continue; // changes each launch it seems
             mobil.IsVisible = S_ShowBlockLabels;
         }
     }
