@@ -1,0 +1,16 @@
+
+FrameSystem: help, save, leave
+FrameAfterTools: map options, test mode, validate, etc
+FrameEditToolsWithUnderground: replaces eraser, undo, freelook, etc with a thing that includes a mountain icon
+FramePlaceModes: macroblock, block, item, etc
+FrameDeveloperTools: a green bar on left, does nothing?
+FrameToolTips: Description on hover in green bar
+FrameChallengeParams: Top left map info stuff
+FrameCopyPasteTools: (unchecked, obvs)
+FrameBackground: green bar at bottom
+FrameScriptTools: plugins bottom left
+FrameMapTypes: top right (TM2?) button showing tm/race and click to change
+FrameLightTools: choose time of day etc
+FrameSpaceDistortionTools: deprecated (rigidity and stuff)
+FrameBottomLeftPanel: Modes, block mode, ghost block mode, free block mode, etc
+FrameEditTools: eraser, undo, ..., freelook, plugins
