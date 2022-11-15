@@ -201,7 +201,7 @@ void CheckAutoHideInventory(CGameCtnEditorFree@ editor) {
 }
 
 [Setting hidden]
-float S_InventoryFocusTimeoutSeconds = 0.9;
+float S_InventoryFocusTimeoutSeconds = 1.9;
 
 uint lastTimeFocused = 0;
 bool IsInventoryFrameFocused(vec2 pos) {
