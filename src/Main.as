@@ -570,7 +570,7 @@ void DrawIndicatorOverlay() {
     nvg::Stroke();
     nvg::ClosePath();
     nvg::TextAlign(nvg::Align::Center | nvg::Align::Middle);
-    nvg::FontFace(nvgMontSemiBold);
+    nvg::FontFace(nvgDroidSans);
     nvg::FontSize(S_HoverFontSize);
     auto textWidth = hoverAreaSize.x * 0.7;
     auto textBs = nvg::TextBoxBounds(hoverAreaSize.x * 0.7, HoverMsg);
