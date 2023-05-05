@@ -3,8 +3,11 @@ void Main() {
     startnew(WatchEditor);
     startnew(InitButtons);
     // startnew(WatchComputeShadowsIntercept);
+    screenWH = vec2(Draw::GetWidth(), Draw::GetHeight());
+    screenAspect = screenWH.x / Math::Max(10.0, screenWH.y);
 }
 
+bool g_ForceUpdateNextFrame = false;
 void WatchEditor() {
     bool prevEditorNull = true;
     while (true) {
@@ -15,10 +18,12 @@ void WatchEditor() {
             continue;
         }
         bool resolutionChanged = int(screenWH.x) != Draw::GetWidth() || int(screenWH.y) != Draw::GetHeight();
-        if (prevEditorNull || resolutionChanged) {
+        bool shouldUpdate = prevEditorNull || resolutionChanged || g_ForceUpdateNextFrame;
+        if (shouldUpdate) {
             // run setup
             ConfigEditorUI();
             g_EditorLabelsDone = false; // redo labels
+            g_ForceUpdateNextFrame = false;
         }
         prevEditorNull = false;
         CheckEditorLabels(editor);
@@ -234,6 +239,7 @@ vec2 uiPosPx;
 vec2 uiSizePx;
 vec2 uiWH;
 bool matriciesInitialized = false;
+float screenAspect;
 vec2 screenWH;
 vec2 hoverAreaSize;
 vec2 hoverAreaPos;
@@ -250,14 +256,20 @@ void ConfigEditorUI() {
         return;
     }
 
+    // if (S_VanillaUIScaleOnly) {
+    //     editor.EditorInterface.InterfaceScene.OverlayMin = EditorBounds_FS_Q.xy;
+    //     editor.EditorInterface.InterfaceScene.OverlayMax = EditorBounds_FS_Q.zw;
+    // }
+
     screenWH = vec2(Draw::GetWidth(), Draw::GetHeight());
+    screenAspect = screenWH.x / Math::Max(10.0, screenWH.y);
 
-    vec2 oMin = S_EditorDrawBounds.xyz.xy;
-    vec2 oMax = vec2(S_EditorDrawBounds.z, S_EditorDrawBounds.w);
+    vec2 oMin = S_EditorDrawBounds.xy;
+    vec2 oMax = S_EditorDrawBounds.zw;
 
-    if (S_DrawEditorFullscreen) {
-        oMin = vec2(-1, -1);
-        oMax = vec2(1, 1);
+    if (S_DrawEditorFullscreen || S_VanillaUIScaleOnly) {
+        oMin = EditorBounds_FS_Q.xy;
+        oMax = EditorBounds_FS_Q.zw;
     }
 
     editor.EditorInterface.InterfaceScene.OverlayMin = oMin;
@@ -346,6 +358,17 @@ void UpdateEditorSizeFromDrag() {
     newBounds.y = Math::Min(newBounds.y, 1);
     S_EditorDrawBounds.x = newBounds.x;
     S_EditorDrawBounds.w = newBounds.y;
+    if (S_LockUIRatioToScreenRatio) {
+        // these are UVs, so we want the aspect to be 1.0, and the cursor should stay *inside* the editor UI for hover logic
+        auto w = S_EditorDrawBounds.z - S_EditorDrawBounds.x;
+        auto h = S_EditorDrawBounds.w - S_EditorDrawBounds.y;
+        auto aspect = w/h;
+        if (aspect > 1.001) {
+            S_EditorDrawBounds.w = S_EditorDrawBounds.y + w;
+        } else if (aspect < 0.999) {
+            S_EditorDrawBounds.x = S_EditorDrawBounds.z - h;
+        }
+    }
     ConfigEditorUI();
 }
 
@@ -357,7 +380,7 @@ void UpdateEditorPosFromDrag() {
     targetPosNew.y = Math::Max(0, targetPosNew.y);
     auto newBounds = ScreenToUv(targetPosNew);
 
-    vec2 oMin = S_EditorDrawBounds.xyz.xy;
+    vec2 oMin = S_EditorDrawBounds.xy;
     vec2 oMax = vec2(S_EditorDrawBounds.z, S_EditorDrawBounds.w);
     vec2 oDiff = oMax - oMin;
 
@@ -485,7 +508,7 @@ void Update(float dt) {
         g_HoveringOverEditor = false;
     }
     for (uint i = 0; i < buttons.Length; i++) {
-        buttons[i].IsVisible = g_HoveringOverEditor;
+        buttons[i].IsVisible = (g_HoveringOverEditor && !S_VanillaUIScaleOnly);
     }
 }
 
@@ -503,21 +526,9 @@ void Render() {
         // when editing an item this becomes CGameEditorItem
         if (editor is null) return;
 
-        // auto elInventory = cast<CControlFrame>(editor.EditorInterface.InterfaceRoot.Childs[0]).Childs[0];
-        auto elMainUI = editor.EditorInterface.InterfaceRoot.Childs[0];
-        auto elMLOverlay = editor.EditorInterface.InterfaceRoot.Childs[8];
-        array<CControlBase@> els = {elMainUI, elMLOverlay};
-        for (uint i = 0; i < els.Length; i++) {
-            auto el = els[i];
-            if (g_HoveringOverEditor) {
-                el.IsVisible = true;
-                // el.DrawBackground = false;
-            } else {
-                el.IsHiddenExternal = true;
-            }
-        }
+        SetEditorUIVisibility(editor);
         DrawButtons();
-        if (g_HoveringOverEditor) {
+        if (g_HoveringOverEditor || S_VanillaUIScaleOnly) {
             ShowEditorWindowBounds();
         } else {
             // since the editor isn't visible we want to tell the user:
@@ -526,11 +537,30 @@ void Render() {
     }
 }
 
+
+void SetEditorUIVisibility(CGameCtnEditorFree@ editor) {
+    // auto elInventory = cast<CControlFrame>(editor.EditorInterface.InterfaceRoot.Childs[0]).Childs[0];
+    auto elMainUI = editor.EditorInterface.InterfaceRoot.Childs[0];
+    auto elMLOverlay = editor.EditorInterface.InterfaceRoot.Childs[8];
+    array<CControlBase@> els = {elMainUI, elMLOverlay};
+    for (uint i = 0; i < els.Length; i++) {
+        auto el = els[i];
+        if (g_HoveringOverEditor || S_VanillaUIScaleOnly) {
+            el.IsVisible = true;
+            // el.DrawBackground = false;
+        } else {
+            el.IsHiddenExternal = true;
+        }
+    }
+}
+
+
 /** uv: vec2 with components in range [-1,1] */
 vec2 UvToScreen(vec2 uv) {
     return uv * screenWH / 2. + screenWH / 2.;
 }
 
+// TL: -1,-1; BR: 1,1
 vec2 ScreenToUv(vec2 pos) {
     return (pos - screenWH / 2.) * 2. / screenWH;
 }
@@ -595,6 +625,7 @@ void ShowEditorWindowBounds() {
 void OnSettingsChanged() {
     // print('settings changed');
     ConfigEditorUI();
+    g_ForceUpdateNextFrame = true;
 }
 
 bool Vec4Eq(vec4 a, vec4 b) {

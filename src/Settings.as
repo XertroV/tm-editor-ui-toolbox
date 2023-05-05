@@ -6,6 +6,10 @@ vec4 EditorBounds_FS_Q = vec4(-1, -1, 1, 1);
 vec4 EditorBounds_Center_Q = vec4(-.5, -.5, .5, .5);
 
 [Setting hidden]
+// this will disable all UI scaling
+bool S_VanillaUIScaleOnly = false;
+
+[Setting hidden]
 vec4 S_EditorDrawBounds = EditorBounds_BL_Q; // bottom left
 // vec4 S_EditorDrawBounds = vec4(0, -0, 1, 1); // top left
 // vec4 S_EditorDrawBounds = vec4(-1, 0, 0, 1); // top right
@@ -26,6 +30,9 @@ bool S_AutoHideInventory = false;
 [Setting hidden]
 bool S_ShowDebugRegions = false;
 
+[Setting hidden]
+bool S_LockUIRatioToScreenRatio = true;
+
 const string TTIndicator = "  \\$888" + Icons::QuestionCircle + "\\$z";
 
 
@@ -41,11 +48,18 @@ void S_RenderUIScaleTab() {
     bool orig_ShowBlockLabels = S_ShowBlockLabels;
 
     Heading("Editor UI Options");
+    bool origVanilla = S_VanillaUIScaleOnly;
+    S_VanillaUIScaleOnly = UI::Checkbox("Disable UI Scaling (No buttons, no outline)", S_VanillaUIScaleOnly);
+    AddSimpleTooltip("This deactivates all UI scaling code.\nThe editor will always be full size, etc.");
+    if (origVanilla != S_VanillaUIScaleOnly) {
+        g_ForceUpdateNextFrame = true;
+    }
+
     S_EditorHoverTimeout = uint(UI::SliderFloat("Editor UI Hide Timeout (s)" + TTIndicator, S_EditorHoverTimeout / 1000., 0, 3.) * 1000.);
     AddSimpleTooltip("How long the mouse needs to spend outside the editor UI region for the UI to automatically hide.");
 
-    S_AlwaysShowEditor = UI::Checkbox("Always Show Editor UI? \\$f84Unsafe for mapping!\\$z" + TTIndicator, S_AlwaysShowEditor);
-    AddSimpleTooltip("You will experience phantom UI clicks if you leave this on.\nIt's useful while adjusting the editor UI region, though.");
+    S_AlwaysShowEditor = UI::Checkbox("Always Show Editor UI? \\$f84Unsafe for mapping if scaled!\\$z" + TTIndicator, S_AlwaysShowEditor);
+    AddSimpleTooltip("You will experience phantom UI clicks if you leave this on and have a <100% editor UI.\nIt's useful while adjusting the editor UI region, though.");
 
     S_HideMapInfo = UI::Checkbox("Hide Map Info?" + TTIndicator, S_HideMapInfo);
     AddSimpleTooltip("Hides the green box in the top left that shows map name,\nauthor, coppers cost, and validation status.\n(Sets FrameChallengeParams.IsVisible = false)");
@@ -58,11 +72,8 @@ void S_RenderUIScaleTab() {
     if (S_AutoHideInventory) {
         S_InventoryFocusTimeoutSeconds = UI::SliderFloat("Inventory Auto-hide Timeout (s)", S_InventoryFocusTimeoutSeconds, 0., 3.);
     }
-    // if (UI::BeginChild("timeout child")) {
-    //     UI::BeginDisabled(!S_AutoHideInventory);
-    //     UI::EndDisabled();
-    // }
-    // UI::EndChild();
+
+    S_LockUIRatioToScreenRatio = UI::Checkbox("Lock the editor UI aspect ratio to the screen aspect ratio (currently: " + screenAspect + ")", S_LockUIRatioToScreenRatio);
 
     S_ShowDebugRegions = UI::Checkbox("Draw Debug Regions?" + TTIndicator, S_ShowDebugRegions);
     AddSimpleTooltip("This will draw the regions where hover things activate if they are invisible.\n(E.g., the auto-unhide inventory activation region)");
