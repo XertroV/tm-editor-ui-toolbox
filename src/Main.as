@@ -408,7 +408,8 @@ void OnMouseMove(int x, int y) {
     vec2 pos = vec2(x, y);
     g_LastMousePos = pos;
     bool activelyHovering = IsWithin(pos, hoverAreaPos, hoverAreaSize)
-        || (g_HoveringOverEditor && IsWithin(pos, uiPosPx, uiSizePx));
+        || (g_HoveringOverEditor && IsWithin(pos, uiPosPx, uiSizePx))
+        || S_VanillaUIScaleOnly;
     g_HoveringOverEditor = S_AlwaysShowEditor || activelyHovering || (Time::Now - g_LastEditorHoverTime < S_EditorHoverTimeout);
     if (activelyHovering) g_LastEditorHoverTime = Time::Now;
     g_MouseHoveringInventory = g_HoveringOverEditor && (
@@ -528,7 +529,7 @@ void Render() {
 
         SetEditorUIVisibility(editor);
         DrawButtons();
-        if (g_HoveringOverEditor || S_VanillaUIScaleOnly) {
+        if (g_HoveringOverEditor) {
             ShowEditorWindowBounds();
         } else {
             // since the editor isn't visible we want to tell the user:
@@ -590,6 +591,7 @@ vec2 ScaleUvToPixels(vec2 uv) {
 const string HoverMsg = "Hover to Show UI";
 
 void DrawIndicatorOverlay() {
+    if (S_VanillaUIScaleOnly) return;
     nvg::Reset();
     nvg::BeginPath();
     nvg::Rect(hoverAreaPos, hoverAreaSize);
@@ -611,6 +613,7 @@ void DrawIndicatorOverlay() {
 
 void ShowEditorWindowBounds() {
     if (!matriciesInitialized) return;
+    if (S_VanillaUIScaleOnly) return;
     nvg::Reset();
     nvg::BeginPath();
     nvg::Rect(uiPosPx, ScaleUvToPixels(uiWH));
