@@ -22,6 +22,9 @@ bool S_HideMapInfo = false;
 bool S_ShowBlockLabels = false;
 
 [Setting hidden]
+bool S_HideCustomObjectDelete = false;
+
+[Setting hidden]
 bool S_AlwaysShowEditor = false;
 
 [Setting hidden]
@@ -46,6 +49,7 @@ void S_RenderIntroTab() {
 void S_RenderUIScaleTab() {
     vec4 orig_EditorDrawBounds = vec4(S_EditorDrawBounds);
     bool orig_ShowBlockLabels = S_ShowBlockLabels;
+    bool orig_HideCustomObjectDelete = S_HideCustomObjectDelete;
 
     Heading("Editor UI Options");
     bool origVanilla = S_VanillaUIScaleOnly;
@@ -66,6 +70,9 @@ void S_RenderUIScaleTab() {
 
     S_ShowBlockLabels = UI::Checkbox("Show All Block Labels in Inventory?" + TTIndicator, S_ShowBlockLabels);
     AddSimpleTooltip("This will enable labels for the folders / blocks in the inventory.\nThese aren't usually visible.\nTo disable, you might need to restart the editor/game.");
+
+    S_HideCustomObjectDelete = UI::Checkbox("Hide Custom Block/Item/Macroblock Delete button?" + TTIndicator, S_HideCustomObjectDelete);
+    AddSimpleTooltip("This will hide the \"X\" button in the top-right corner of custom\nblocks, items, or macroblocks.");
 
     S_AutoHideInventory = UI::Checkbox("Auto-hide the Inventory? (Auto TAB)" + TTIndicator, S_AutoHideInventory);
     AddSimpleTooltip("This will auto-hide the inventory (blocks / items / macroblocks / etc) when the mouse\nis not hovering over it, and re-show it when the mouse enters that region again.\nUseful in fullscreen mode. Also helps with phantom misclicks.");
@@ -116,7 +123,7 @@ void S_RenderUIScaleTab() {
         startnew(OnSettingsChanged);
     }
 
-    if (orig_ShowBlockLabels != S_ShowBlockLabels) {
+    if (orig_ShowBlockLabels != S_ShowBlockLabels || orig_HideCustomObjectDelete != S_HideCustomObjectDelete) {
         g_EditorLabelsDone = false;
     }
 }
