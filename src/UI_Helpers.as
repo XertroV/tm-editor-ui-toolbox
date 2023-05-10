@@ -35,15 +35,7 @@ void VPad(float scale = 1.) {
 
 void AddSimpleTooltip(const string &in msg) {
     if (!UI::IsItemHovered()) return;
-    auto width = Draw::MeasureString(msg).x;
-    auto maxWidth = Draw::GetWidth() / 6.;
     UI::BeginTooltip();
     UI::Text(msg);
-    // if (width > maxWidth) {
-    //     UI::Dummy(vec2(maxWidth, 0));
-    //     UI::TextWrapped(msg);
-    // } else {
-    //     UI::Text(msg);
-    // }
     UI::EndTooltip();
 }
