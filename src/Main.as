@@ -124,10 +124,10 @@ void CheckEditorLabels(CGameCtnEditorFree@ editor, bool force = false) {
         for (uint i = 0; i < scene.Mobils.Length; i++) {
             auto mobil = scene.Mobils[i];
             auto mobileIdName = mobil.Id.GetName();
-            if (mobileIdName == "EntryInfos") {
+            if (mobileIdName == "EntryInfos" && S_ShowBlockLabels) {
             // if (mobil.Id.Value != 0x40005b9b) continue; // changes each launch it seems
                 mobil.IsVisible = S_ShowBlockLabels;
-            } else if (mobileIdName == "FrameRemove") {
+            } else if (mobileIdName == "FrameRemove" && S_HideCustomObjectDelete) {
                 mobil.IsVisible = !S_HideCustomObjectDelete;
             }
         }
@@ -187,8 +187,8 @@ void RecurseSetLabelVisibility(CControlBase@ el) {
             RecurseSetLabelVisibility(frame.Childs[i]);
         }
     }
-    if (el.Id.GetName() == "EntryInfos") {
-        el.IsVisible = S_ShowBlockLabels;
+    if (el.Id.GetName() == "EntryInfos" && S_ShowBlockLabels) {
+        el.IsVisible = true;
     }
 }
 
