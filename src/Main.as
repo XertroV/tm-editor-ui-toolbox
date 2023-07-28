@@ -84,7 +84,9 @@ void Set_LM_SizeMax() {
 CControlContainer@ GetFrameMain(CGameCtnApp@ app) {
     try {
         auto editor = cast<CGameCtnEditorFree>(app.Editor);
+        if (editor is null) return null;
         auto uiSuperRoot = cast<CControlFrameStyled>(editor.EditorInterface.InterfaceRoot);
+        if (uiSuperRoot is null) return null;
         auto frameMain = cast<CControlContainer>(uiSuperRoot.Childs[0]);
         return frameMain;
     } catch {
@@ -544,18 +546,23 @@ void Render() {
 
 
 void SetEditorUIVisibility(CGameCtnEditorFree@ editor) {
-    // auto elInventory = cast<CControlFrame>(editor.EditorInterface.InterfaceRoot.Childs[0]).Childs[0];
-    auto elMainUI = editor.EditorInterface.InterfaceRoot.Childs[0];
-    auto elMLOverlay = editor.EditorInterface.InterfaceRoot.Childs[8];
-    array<CControlBase@> els = {elMainUI, elMLOverlay};
-    for (uint i = 0; i < els.Length; i++) {
-        auto el = els[i];
-        if (g_HoveringOverEditor || S_VanillaUIScaleOnly) {
-            el.IsVisible = true;
-            // el.DrawBackground = false;
-        } else {
-            el.IsHiddenExternal = true;
+    try {
+        // auto elInventory = cast<CControlFrame>(editor.EditorInterface.InterfaceRoot.Childs[0]).Childs[0];
+        auto elMainUI = editor.EditorInterface.InterfaceRoot.Childs[0];
+        auto elMLOverlay = editor.EditorInterface.InterfaceRoot.Childs[8];
+        array<CControlBase@> els = {elMainUI, elMLOverlay};
+        for (uint i = 0; i < els.Length; i++) {
+            auto el = els[i];
+            if (g_HoveringOverEditor || S_VanillaUIScaleOnly) {
+                el.IsVisible = true;
+                // el.DrawBackground = false;
+            } else {
+                el.IsHiddenExternal = true;
+            }
         }
+    } catch {
+        // fails in simple editor
+        return;
     }
 }
 
