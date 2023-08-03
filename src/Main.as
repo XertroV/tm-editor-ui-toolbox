@@ -513,7 +513,7 @@ void Update(float dt) {
         g_HoveringOverEditor = false;
     }
     for (uint i = 0; i < buttons.Length; i++) {
-        buttons[i].IsVisible = (g_HoveringOverEditor && !S_VanillaUIScaleOnly);
+        buttons[i].IsVisible = (g_HoveringOverEditor && !S_VanillaUIScaleOnly && !S_HideButtons);
     }
 }
 
