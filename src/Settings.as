@@ -10,6 +10,9 @@ vec4 EditorBounds_Center_Q = vec4(-.5, -.5, .5, .5);
 bool S_VanillaUIScaleOnly = false;
 
 [Setting hidden]
+bool S_HideButtons = false;
+
+[Setting hidden]
 vec4 S_EditorDrawBounds = EditorBounds_BL_Q; // bottom left
 // vec4 S_EditorDrawBounds = vec4(0, -0, 1, 1); // top left
 // vec4 S_EditorDrawBounds = vec4(-1, 0, 0, 1); // top right
@@ -56,6 +59,13 @@ void S_RenderUIScaleTab() {
     S_VanillaUIScaleOnly = UI::Checkbox("Disable UI Scaling (No buttons, no outline)", S_VanillaUIScaleOnly);
     AddSimpleTooltip("This deactivates all UI scaling code.\nThe editor will always be full size, etc.");
     if (origVanilla != S_VanillaUIScaleOnly) {
+        g_ForceUpdateNextFrame = true;
+    }
+
+    bool origHideButtons = S_HideButtons;
+    S_HideButtons = UI::Checkbox("Hide buttons (expand, move, resize)", S_HideButtons);
+    AddSimpleTooltip("Hides the 3 added buttons in the upper-right corner.");
+    if (origHideButtons != S_HideButtons) {
         g_ForceUpdateNextFrame = true;
     }
 
