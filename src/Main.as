@@ -7,12 +7,23 @@ void Main() {
     screenAspect = screenWH.x / Math::Max(10.0, screenWH.y);
 }
 
+void RenderEarly() {
+    screenWH = vec2(Draw::GetWidth(), Draw::GetHeight());
+    screenAspect = screenWH.x / Math::Max(10.0, screenWH.y);
+}
+
 bool g_ForceUpdateNextFrame = false;
 void WatchEditor() {
     bool prevEditorNull = true;
+    auto app = GetApp();
     while (true) {
         yield();
-        auto editor = cast<CGameCtnEditorFree>(GetApp().Editor);
+        if (app.Editor is null) {
+            prevEditorNull = true;
+            continue;
+        }
+        EUIScale::SetUIScale();
+        auto editor = cast<CGameCtnEditorFree>(app.Editor);
         if (editor is null) {
             prevEditorNull = true;
             continue;

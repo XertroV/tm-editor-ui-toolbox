@@ -57,6 +57,7 @@ for pluginSrc in ${pluginSources[@]}; do
 
   BUILD_NAME=$PLUGIN_NAME-$(date +%s).zip
   RELEASE_NAME=$PLUGIN_NAME-$PLUGIN_VERSION.op
+  PLUGIN_FOLDER_NAME=$PLUGIN_NAME
   PLUGINS_DIR=${PLUGINS_DIR:-$HOME/win/OpenplanetNext/Plugins}
   PLUGIN_DEV_LOC=$PLUGINS_DIR/$PLUGIN_NAME
   PLUGIN_RELEASE_LOC=$PLUGINS_DIR/$RELEASE_NAME
@@ -113,12 +114,19 @@ for pluginSrc in ${pluginSources[@]}; do
   esac
 
 
+
   echo ""
   if [[ "$_copy_exit_code" != "0" ]]; then
     echo $PLUGIN_PRETTY_NAME
     _colortext16 red "⚠ Error: could not copy plugin to Trackmania directory. You might need to click\n\t\`F3 > Scripts > TogglePlugin > PLUGIN\`\nto unlock the file for writing."
     _colortext16 red "⚠   Also, \"Stop Recent\" and \"Reload Recent\" should work, too, if the plugin is the \"recent\" plugin."
   else
+    case $_build_mode in
+      dev|prerelease|unittest)
+        # trigger remote build
+        tm-remote-build load folder "$PLUGIN_FOLDER_NAME" --host 172.18.16.1 --port 30000 -v -d "$HOME/OpenplanetNext/"
+        ;;
+    esac
     _colortext16 green "✅ Release file: ${RELEASE_NAME}"
   fi
 
