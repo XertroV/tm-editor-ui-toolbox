@@ -5,7 +5,7 @@ vec4 EditorBounds_BL_Q = vec4(0, -1, 1, 0);
 vec4 EditorBounds_FS_Q = vec4(-1, -1, 1, 1);
 vec4 EditorBounds_Center_Q = vec4(-.5, -.5, .5, .5);
 
-[Setting hidden]
+// [Setting hidden]
 // this will disable all UI scaling
 bool S_VanillaUIScaleOnly = false;
 
@@ -27,17 +27,17 @@ bool S_ShowBlockLabels = false;
 [Setting hidden]
 bool S_HideCustomObjectDelete = false;
 
-[Setting hidden]
+// [Setting hidden]
 bool S_AlwaysShowEditor = false;
 
-[Setting hidden]
+// [Setting hidden]
 bool S_AutoHideInventory = false;
 
-[Setting hidden]
+// [Setting hidden]
 bool S_ShowDebugRegions = false;
 
-[Setting hidden]
-bool S_LockUIRatioToScreenRatio = true;
+// [Setting hidden]
+bool S_LockUIRatioToScreenRatio = false;
 
 const string TTIndicator = "  \\$888" + Icons::QuestionCircle + "\\$z";
 
@@ -55,25 +55,6 @@ void S_RenderUIScaleTab() {
     bool orig_HideCustomObjectDelete = S_HideCustomObjectDelete;
 
     Heading("Editor UI Options");
-    bool origVanilla = S_VanillaUIScaleOnly;
-    S_VanillaUIScaleOnly = UI::Checkbox("Disable UI Scaling (No buttons, no outline)", S_VanillaUIScaleOnly);
-    AddSimpleTooltip("This deactivates all UI scaling code.\nThe editor will always be full size, etc.");
-    if (origVanilla != S_VanillaUIScaleOnly) {
-        g_ForceUpdateNextFrame = true;
-    }
-
-    bool origHideButtons = S_HideButtons;
-    S_HideButtons = UI::Checkbox("Hide buttons (expand, move, resize)", S_HideButtons);
-    AddSimpleTooltip("Hides the 3 added buttons in the upper-right corner.");
-    if (origHideButtons != S_HideButtons) {
-        g_ForceUpdateNextFrame = true;
-    }
-
-    S_EditorHoverTimeout = uint(UI::SliderFloat("Editor UI Hide Timeout (s)" + TTIndicator, S_EditorHoverTimeout / 1000., 0, 3.) * 1000.);
-    AddSimpleTooltip("How long the mouse needs to spend outside the editor UI region for the UI to automatically hide.");
-
-    S_AlwaysShowEditor = UI::Checkbox("Always Show Editor UI? \\$f84Unsafe for mapping if scaled!\\$z" + TTIndicator, S_AlwaysShowEditor);
-    AddSimpleTooltip("You will experience phantom UI clicks if you leave this on and have a <100% editor UI.\nIt's useful while adjusting the editor UI region, though.");
 
     S_HideMapInfo = UI::Checkbox("Hide Map Info?" + TTIndicator, S_HideMapInfo);
     AddSimpleTooltip("Hides the green box in the top left that shows map name,\nauthor, coppers cost, and validation status.\n(Sets FrameChallengeParams.IsVisible = false)");
@@ -84,64 +65,15 @@ void S_RenderUIScaleTab() {
     S_HideCustomObjectDelete = UI::Checkbox("Hide Custom Block/Item/Macroblock Delete button?" + TTIndicator, S_HideCustomObjectDelete);
     AddSimpleTooltip("This will hide the \"X\" button in the top-right corner of custom\nblocks, items, or macroblocks.");
 
-    S_AutoHideInventory = UI::Checkbox("Auto-hide the Inventory? (Auto TAB)" + TTIndicator, S_AutoHideInventory);
-    AddSimpleTooltip("This will auto-hide the inventory (blocks / items / macroblocks / etc) when the mouse\nis not hovering over it, and re-show it when the mouse enters that region again.\nUseful in fullscreen mode. Also helps with phantom misclicks.");
-    if (S_AutoHideInventory) {
-        S_InventoryFocusTimeoutSeconds = UI::SliderFloat("Inventory Auto-hide Timeout (s)", S_InventoryFocusTimeoutSeconds, 0., 3.);
-    }
-
-    S_LockUIRatioToScreenRatio = UI::Checkbox("Lock the editor UI aspect ratio to the screen aspect ratio (currently: " + screenAspect + ")", S_LockUIRatioToScreenRatio);
-
-    S_ShowDebugRegions = UI::Checkbox("Draw Debug Regions?" + TTIndicator, S_ShowDebugRegions);
-    AddSimpleTooltip("This will draw the regions where hover things activate if they are invisible.\n(E.g., the auto-unhide inventory activation region)");
-
-    Heading("Editor UI Quick Settings");
-    QuickSetting_Bounds(EditorBounds_FS_Q, "Fullscreen (Standard Editor)");
-    QuickSetting_Bounds(EditorBounds_BL_Q, "Bottom Left Quarter (Default)");
-    QuickSetting_Bounds(EditorBounds_TL_Q, "Top Left Quarter");
-    QuickSetting_Bounds(EditorBounds_TR_Q, "Top Right Quarter");
-    QuickSetting_Bounds(EditorBounds_BR_Q, "Bottom Right Quarter");
-    QuickSetting_Bounds(EditorBounds_Center_Q, "Center of Screen", false);
-
-    Heading("Editor UI Size/Location");
-
-    UI::TextWrapped("You can set a custom editor UI scale and placement using these sliders.");
-    UI::TextWrapped("Note: they are not very intiutive. Use the quick settings buttons above to get a feel. Ctrl + click the sliders to set an exact value.");
-    UI::TextWrapped("You might find it easier to drag the " + Icons::Arrows + " and " + Icons::Expand + " buttons to dynamically move and resize the editor, respectively.");
-    VPad(.25);
-    if (UI::BeginTable("pos/size", 2, UI::TableFlags::SizingFixedFit)) {
-        UI::TableNextColumn();
-        UI::Text("Editor UI Position:");
-        UI::TableNextColumn();
-        UI::Text(uiPosPx.ToString());
-        UI::TableNextColumn();
-        UI::Text("Editor UI Size:");
-        UI::TableNextColumn();
-        UI::Text(uiSizePx.ToString());
-        UI::EndTable();
-    }
-    VPad(.5);
-
-
-    S_EditorDrawBounds.x = UI::SliderFloat("OverlayMin x", S_EditorDrawBounds.x, -1, S_EditorDrawBounds.z);
-    S_EditorDrawBounds.y = UI::SliderFloat("OverlayMin y", S_EditorDrawBounds.y, -1, S_EditorDrawBounds.w);
-    S_EditorDrawBounds.z = UI::SliderFloat("OverlayMax x", S_EditorDrawBounds.z, S_EditorDrawBounds.x, 1);
-    S_EditorDrawBounds.w = UI::SliderFloat("OverlayMax y", S_EditorDrawBounds.w, S_EditorDrawBounds.y, 1);
-
-
-    if (!Vec4Eq(orig_EditorDrawBounds, S_EditorDrawBounds)) {
-        startnew(OnSettingsChanged);
-    }
-
     if (orig_ShowBlockLabels != S_ShowBlockLabels || orig_HideCustomObjectDelete != S_HideCustomObjectDelete) {
         g_EditorLabelsDone = false;
     }
 }
 
-[Setting hidden]
+// [Setting hidden]
 bool S_HoverIsSimilarlyScaled = true;
 
-[SettingsTab name="Hover Indicator" icon="HandPointerO"]
+// [SettingsTab name="Hover Indicator" icon="HandPointerO"]
 void S_RenderHoverTab() {
     Heading("Hover Indicator");
     S_HoverIsSimilarlyScaled = UI::Checkbox("Automatically Manage?" + TTIndicator, S_HoverIsSimilarlyScaled);
@@ -296,7 +228,7 @@ vec4 S_EditorIndicatorStrokeColor = vec4(0.894f, 0.737f, 0.067f, 0.412f);
 [Setting hidden]
 float S_EditorIndicatorStrokeWidth = 4.;
 
-[SettingsTab name="Appearance" icon="PaintBrush"]
+// [SettingsTab name="Appearance" icon="PaintBrush"]
 void S_RenderAppearanceTab() {
     Heading("Hover Indicator");
     S_HoverTextColor = UI::InputColor4("Hover Text Color", S_HoverTextColor);

@@ -73,13 +73,22 @@ namespace EUIScale {
         return sizeUi * screenWH * GetAspectCorrection();
     }
 
-
+    bool setV2ScaleLastFrame = false;
     void SetUIScale() {
+        if (!S_EnableEditorUIScaling) {
+            if (setV2ScaleLastFrame) {
+                setV2ScaleLastFrame = false;
+            } else {
+                return;
+            }
+        } else {
+            setV2ScaleLastFrame = true;
+        }
         if (!S_VanillaUIScaleOnly) S_VanillaUIScaleOnly = true;
         try {
             auto editor = cast<CGameCtnEditorFree>(GetApp().Editor);
             if (editor !is null) {
-                SetUIScaleOnInterfaceRoot(editor.EditorInterface.InterfaceScene.Mobils[0]);
+                SetUIScaleOnInterfaceRoot(editor.EditorInterface.InterfaceScene.Mobils[0], !setV2ScaleLastFrame);
                 return;
             }
         } catch {
@@ -87,8 +96,8 @@ namespace EUIScale {
         }
     }
 
-    void SetUIScaleOnInterfaceRoot(CSceneMobil@ mobil) {
-        mobil.SetLocation(GetFrameRootUILocation(), null);
+    void SetUIScaleOnInterfaceRoot(CSceneMobil@ mobil, bool reset = false) {
+        mobil.SetLocation(reset ? iso4(mat4::Identity()) : GetFrameRootUILocation(), null);
     }
 
     iso4 GetFrameRootUILocation() {

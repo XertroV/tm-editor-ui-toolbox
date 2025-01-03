@@ -557,6 +557,7 @@ void Render() {
 
 
 void SetEditorUIVisibility(CGameCtnEditorFree@ editor) {
+    return;
     try {
         // auto elInventory = cast<CControlFrame>(editor.EditorInterface.InterfaceRoot.Childs[0]).Childs[0];
         auto elMainUI = editor.EditorInterface.InterfaceRoot.Childs[0];
