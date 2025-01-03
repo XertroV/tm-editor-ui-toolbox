@@ -558,24 +558,24 @@ void Render() {
 
 void SetEditorUIVisibility(CGameCtnEditorFree@ editor) {
     return;
-    try {
-        // auto elInventory = cast<CControlFrame>(editor.EditorInterface.InterfaceRoot.Childs[0]).Childs[0];
-        auto elMainUI = editor.EditorInterface.InterfaceRoot.Childs[0];
-        auto elMLOverlay = editor.EditorInterface.InterfaceRoot.Childs[8];
-        array<CControlBase@> els = {elMainUI, elMLOverlay};
-        for (uint i = 0; i < els.Length; i++) {
-            auto el = els[i];
-            if (g_HoveringOverEditor || S_VanillaUIScaleOnly) {
-                el.IsVisible = true;
-                // el.DrawBackground = false;
-            } else {
-                el.IsHiddenExternal = true;
-            }
-        }
-    } catch {
-        // fails in simple editor
-        return;
-    }
+    // try {
+    //     // auto elInventory = cast<CControlFrame>(editor.EditorInterface.InterfaceRoot.Childs[0]).Childs[0];
+    //     auto elMainUI = editor.EditorInterface.InterfaceRoot.Childs[0];
+    //     auto elMLOverlay = editor.EditorInterface.InterfaceRoot.Childs[8];
+    //     array<CControlBase@> els = {elMainUI, elMLOverlay};
+    //     for (uint i = 0; i < els.Length; i++) {
+    //         auto el = els[i];
+    //         if (g_HoveringOverEditor || S_VanillaUIScaleOnly) {
+    //             el.IsVisible = true;
+    //             // el.DrawBackground = false;
+    //         } else {
+    //             el.IsHiddenExternal = true;
+    //         }
+    //     }
+    // } catch {
+    //     // fails in simple editor
+    //     return;
+    // }
 }
 
 

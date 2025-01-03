@@ -22,7 +22,7 @@ class NvgButton {
     ButtonOnDrag@ onDrag;
 
     NvgButton(vec2 &in _pos = vec2(), vec2 &in _size = vec2(50, 50), const string &in _label = Icons::QuestionCircleO, ButtonStyle@ _style = DefaultButtonStyle) {
-        font = nvg::LoadFont("DroidSans.ttf", true, true);
+        font = nvg::LoadFont("DroidSans.ttf");
         pos = _pos;
         size = _size;
         label = _label;
